@@ -23,6 +23,11 @@ columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
 # print(filename_2)
 # print(filename_3)
 
+# # input masses
+# mass_1 = float(input('Enter mass in mg:\n'))
+# mass_2 = float(input('Enter mass in mg:\n'))
+# mass_3 = float(input('Enter mass in mg:\n'))
+
 filename_1 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.02,1,2,5,10T)_2.878mg.dat"
 filename_2 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.25-6T)_2.859mg.dat"
 filename_3 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(6.25-9.75T)_2.859mg.dat"
@@ -36,9 +41,6 @@ f1 = open(filename_1, 'r')
 f2 = open(filename_2, 'r')
 f3 = open(filename_3, 'r')
 
-# create output file
-f4 = open('raw_data/combined_raw_data.csv', 'w')
-
 # find header for first file
 header_line_number_1 = 0
 for _ in range(40):
@@ -47,10 +49,6 @@ for _ in range(40):
 
     if line.rstrip() == "[Data]":
         break
-
-# write first file
-for line in f1:
-    f4.write(line)
 
 # find header for second file
 header_line_number_2 = 0
@@ -61,11 +59,6 @@ for _ in range(40):
     if line.rstrip() == "[Data]":
         break
 
-# write second file
-line = f2.readline()
-for line in f2:
-    f4.write(line)
-
 # find header for third file
 header_line_number_3 = 0
 for _ in range(40):
@@ -75,42 +68,34 @@ for _ in range(40):
     if line.rstrip() == "[Data]":
         break
 
-# write third file
-line = f3.readline()
-for line in f3:
-    f4.write(line)
-
 f1.close()
 f2.close()
 f3.close()
-f4.close()
 
 print(header_line_number_1, header_line_number_2, header_line_number_3)
 
-# df = pd.read_csv('raw_data/combined_raw_data.csv', encoding='cp1252')
 df1 = pd.read_csv(filename_1, encoding='cp1252', skiprows=header_line_number_1)
 df1.drop(columns=columns, axis=1, inplace=True)
 dfnew1 = df1.dropna()
 dfnew1['Moment (Am^2/kg)'] = dfnew1['Moment (emu)'] / ((mass_1/1000))
-print(dfnew1.head(5))
-print(dfnew1.count())
+dfnew1.drop(columns=['Moment (emu)'], axis=1, inplace=True)
 
 
 df2 = pd.read_csv(filename_2, encoding='cp1252', skiprows=header_line_number_2)
 df2.drop(columns=columns, axis=1, inplace=True)
 dfnew2 = df2.dropna()
 dfnew2['Moment (Am^2/kg)'] = dfnew2['Moment (emu)'] / ((mass_2/1000))
-print(dfnew2.head(5))
-print(dfnew2.count())
+dfnew2.drop(columns=['Moment (emu)'], axis=1, inplace=True)
 
 df3 = pd.read_csv(filename_3, encoding='cp1252', skiprows=header_line_number_3)
 df3.drop(columns=columns, axis=1, inplace=True)
 dfnew3 = df3.dropna()
 dfnew3['Moment (Am^2/kg)'] = dfnew3['Moment (emu)'] / ((mass_3/1000))
-print(dfnew3.head(5))
-print(dfnew3.count())
-
+dfnew3.drop(columns=['Moment (emu)'], axis=1, inplace=True)
 
 df4 = pd.concat([dfnew1, dfnew2, dfnew3])
-print(df4.head(5))
-print(df4.count())
+# print(df4)
+df4.to_csv('raw_data/combined_raw_data.csv', index=False)
+
+df = pd.read_csv('raw_data/combined_raw_data.csv')
+print(df)
