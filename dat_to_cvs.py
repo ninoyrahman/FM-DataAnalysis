@@ -98,5 +98,3 @@ def concat_files(*args, **kwargs):
     print('file name:', filename_3, ', mass = ', mass_3)
     print('')
     print(df)
-
-concat_files()
