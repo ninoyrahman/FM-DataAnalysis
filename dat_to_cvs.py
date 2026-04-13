@@ -2,6 +2,16 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 
+columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
+                  'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
+                  'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
+                  'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
+                  'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
+                  'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
+                  'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
+                  'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
+                  'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()']
+
 # # read file names for concat
 # filename_1 = input('first file name: ')
 # filename_2 = input('second file name: ')
@@ -79,44 +89,28 @@ print(header_line_number_1, header_line_number_2, header_line_number_3)
 
 # df = pd.read_csv('raw_data/combined_raw_data.csv', encoding='cp1252')
 df1 = pd.read_csv(filename_1, encoding='cp1252', skiprows=header_line_number_1)
-df1['Moment (Am^2/kg)'] = df1['Moment (emu)'] / ((mass_1/1000))
-df1.drop(columns=['Comment', 'Time Stamp (sec)', 'Moment (emu)', 'M. Std. Err. (emu)','Transport Action',
-                  'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
-                  'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
-                  'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
-                  'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
-                  'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
-                  'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
-                  'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
-                  'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()'], 
-                  axis=1, inplace=True)
-print(df1.head(5))
+df1.drop(columns=columns, axis=1, inplace=True)
+dfnew1 = df1.dropna()
+dfnew1['Moment (Am^2/kg)'] = dfnew1['Moment (emu)'] / ((mass_1/1000))
+print(dfnew1.head(5))
+print(dfnew1.count())
 
 
 df2 = pd.read_csv(filename_2, encoding='cp1252', skiprows=header_line_number_2)
-df2['Moment (Am^2/kg)'] = df2['Moment (emu)'] / ((mass_2/1000))
-df2.drop(columns=['Comment', 'Time Stamp (sec)', 'Moment (emu)', 'M. Std. Err. (emu)','Transport Action',
-                  'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
-                  'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
-                  'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
-                  'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
-                  'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
-                  'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
-                  'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
-                  'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()'], 
-                  axis=1, inplace=True)
-print(df2.head(5))
+df2.drop(columns=columns, axis=1, inplace=True)
+dfnew2 = df2.dropna()
+dfnew2['Moment (Am^2/kg)'] = dfnew2['Moment (emu)'] / ((mass_2/1000))
+print(dfnew2.head(5))
+print(dfnew2.count())
 
 df3 = pd.read_csv(filename_3, encoding='cp1252', skiprows=header_line_number_3)
-df3['Moment (Am^2/kg)'] = df3['Moment (emu)'] / ((mass_3/1000))
-df3.drop(columns=['Comment', 'Time Stamp (sec)', 'Moment (emu)', 'M. Std. Err. (emu)','Transport Action',
-                  'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
-                  'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
-                  'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
-                  'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
-                  'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
-                  'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
-                  'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
-                  'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()'], 
-                  axis=1, inplace=True)
-print(df3.head(5))
+df3.drop(columns=columns, axis=1, inplace=True)
+dfnew3 = df3.dropna()
+dfnew3['Moment (Am^2/kg)'] = dfnew3['Moment (emu)'] / ((mass_3/1000))
+print(dfnew3.head(5))
+print(dfnew3.count())
+
+
+df4 = pd.concat([dfnew1, dfnew2, dfnew3])
+print(df4.head(5))
+print(df4.count())
