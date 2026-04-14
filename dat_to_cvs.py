@@ -86,7 +86,7 @@ def concat_files(*args, **kwargs):
     dfnew3['Moment (Am^2/kg)'] = dfnew3['Moment (emu)'] / ((mass_3/1000))
 
     df4 = pd.concat([dfnew1, dfnew2, dfnew3])
-    df4.drop(columns=['Moment (emu)'], axis=1, inplace=True)
+    # df4.drop(columns=['Moment (emu)'], axis=1, inplace=True)
     df4.to_csv('raw_data/combined_raw_data.csv', index=False)
 
     df = pd.read_csv('raw_data/combined_raw_data.csv')

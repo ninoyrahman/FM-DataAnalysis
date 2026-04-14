@@ -29,7 +29,8 @@ else:
     print('number of field steps = ', num_field_steps)
 
 ## Read data
-df = pd.read_csv('raw data.csv')
+# df = pd.read_csv('raw data.csv')
+df = pd.read_csv('raw_data/combined_raw_data.csv')
 
 ## Field mid value calculation
 field_value_mid = 0.5*(field_value[1:]+field_value[:-1])
@@ -41,7 +42,7 @@ print('field_value_mid = ', field_value_mid)
 mass = float(input('Enter mass in mg:\n'))
 dfall = df.dropna()
 dfall['Magnetic Field (T)'] = dfall['Magnetic Field (Oe)'] / 10000
-dfall['Moment (Am^2/kg)'] = dfall['Moment (emu)'] / ((mass/1000))
+# dfall['Moment (Am^2/kg)'] = dfall['Moment (emu)'] / ((mass/1000))
 # print(df1.head())
 
 ## Separating data based on field values
@@ -98,7 +99,7 @@ for index in range(1, num_field_steps):
     dfall_new = pd.concat([dfall_new, dataframe_collection[index]], axis=1)
     
 # Save output data
-dfall_new.to_csv('corrected_raw_data.csv', index=False)
+dfall_new.to_csv('raw_data/corrected_raw_data.csv', index=False)
                                        
 ## plot
 # # plt.plot(df1['Temperature (K)'], df1['Moment (emu)'])
