@@ -3,7 +3,7 @@ import scipy as sp
 import pandas as pd
 
 # function for concating files
-def concat_files(*args, **kwargs):
+def concat_files(debug=True):
     columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
                     'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
                     'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
@@ -15,30 +15,31 @@ def concat_files(*args, **kwargs):
                     'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()']
 
     # read file names for concat
-    # filenumber = int(input('Enter number of files:\n'))
-    # filename_1 = input('first file name: ')
-    # if filenumber > 1:
-    #     filename_2 = input('second file name: ')
-    # if filenumber > 2:
-    #     filename_3 = input('third file name: ')
-    # filename_4 = input('output file name: ')
+    if not debug:
+        filenumber = int(input('Enter number of files:\n'))
+        filename_1 = input('first file name: ')
+        if filenumber > 1:
+            filename_2 = input('second file name: ')
+        if filenumber > 2:
+            filename_3 = input('third file name: ')
+        filename_4 = input('output file name: ')
 
-    # # input masses
-    # mass_1 = float(input('Enter mass in mg for first file:\n'))
-    # if filenumber > 1:
-    #     mass_2 = float(input('Enter mass in mg for second file:\n'))
-    # if filenumber > 2:
-    #     mass_3 = float(input('Enter mass in mg for third file:\n'))
+        # input masses
+        mass_1 = float(input('Enter mass in mg for first file:\n'))
+        if filenumber > 1:
+            mass_2 = float(input('Enter mass in mg for second file:\n'))
+        if filenumber > 2:
+            mass_3 = float(input('Enter mass in mg for third file:\n'))
+    else:
+        filenumber = 3
+        filename_1 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.02,1,2,5,10T)_2.878mg.dat"
+        filename_2 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.25-6T)_2.859mg.dat"
+        filename_3 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(6.25-9.75T)_2.859mg.dat"
+        filename_4 = "raw_data/combined_raw_data.csv"
 
-    filenumber = 3
-    filename_1 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.02,1,2,5,10T)_2.878mg.dat"
-    filename_2 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.25-6T)_2.859mg.dat"
-    filename_3 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(6.25-9.75T)_2.859mg.dat"
-    filename_4 = "raw_data/combined_raw_data.csv"
-
-    mass_1 = 2.878
-    mass_2 = 2.859
-    mass_3 = 2.859
+        mass_1 = 2.878
+        mass_2 = 2.859
+        mass_3 = 2.859
 
     # read input files
     f1 = open(filename_1, 'r')
