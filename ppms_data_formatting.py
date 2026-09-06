@@ -7,7 +7,6 @@ Created on Tue May 28 17:11:13 2024
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 ## inputs (field values and number of field values)
 field_value = np.array([0.02, 0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5., 10.], dtype=np.float64)
