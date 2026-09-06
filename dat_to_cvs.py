@@ -1,17 +1,34 @@
 import pandas as pd
+import numpy as np
 
 # function for concating files
 def concat_files(debug=True):
-    columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
-                    'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
-                    'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
-                    'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
-                    'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
-                    'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
-                    'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
-                    'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
-                    'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()']
-
+    ppms_dev_num = int(input('Enter PPMS device number:\n'))
+    if ppms_dev_num == 1:
+        columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
+                        'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
+                        'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
+                        'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
+                        'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','PPMS Status (code)','System Temp. (K)',
+                        'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
+                        'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
+                        'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
+                        'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()']
+    elif ppms_dev_num == 2:
+        columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
+                            'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
+                            'Coil Signal\" (mV)','Range (mV)','M. Quad. Signal (emu)','M. Raw\' (emu)','M. Raw\" (emu)','Min. Temperature (K)',
+                            'Max. Temperature (K)','Min. Field (Oe)','Max. Field (Oe)','Mass (grams)','Motor Lag (deg)','Pressure (Torr)',
+                            'VSM Status (code)','Motor Status (code)','Measure Status (code)','Measure Count','System Temp. (K)',
+                            'Temp. Status (code)','Field Status (code)','Chamber Status (code)','Position Status (code)',
+                            'Evercool Status (code)','Motor Current (amps)','Motor Heatsink Temp. (C)',
+                            'System Field (Oe)','Sample Position (deg)','Bridge 1 Resistance (ohms)','Bridge 1 Excitation (µA)','Bridge 2 Resistance (ohms)',
+                            'Bridge 2 Excitation (µA)','Bridge 3 Resistance (ohms)','Bridge 3 Excitation (µA)','Bridge 4 Resistance (ohms)','Bridge 4 Excitation (µA)',
+                            'Signal 1 Vin (V)','Signal 2 Vin (V)','Digital Inputs (code)','Drive 1 Iout (mA)','Drive 1 Ipower (W)','Drive 2 Iout (mA)',
+                            'Drive 2 Ipower (W)','Pressure ()','Map 20 ()','Map 21 ()','Map 22 ()','Map 23 ()','Map 24 ()','Map 25 ()','Map 26 ()','Map 27 ()','Map 28 ()','Map 29 ()']
+    else:
+        print('Error: wrong device number')
+    
     # read file names for concat
     if not debug:
         filenumber = int(input('Enter number of files:\n'))
@@ -83,18 +100,21 @@ def concat_files(debug=True):
     df1 = pd.read_csv(filename_1, encoding='cp1252', skiprows=header_line_number_1)
     df1.drop(columns=columns, axis=1, inplace=True)
     dfnew1 = df1.dropna()
+    dfnew1['Magnetic Field (T)'] = np.round(dfnew1['Magnetic Field (Oe)'] / (10000.0), 2)
     dfnew1['Moment (Am^2/kg)'] = dfnew1['Moment (emu)'] / ((mass_1/1000))
 
     if filenumber > 1:
         df2 = pd.read_csv(filename_2, encoding='cp1252', skiprows=header_line_number_2)
         df2.drop(columns=columns, axis=1, inplace=True)
         dfnew2 = df2.dropna()
+        dfnew2['Magnetic Field (T)'] = np.round(dfnew2['Magnetic Field (Oe)'] / (10000.0), 2)
         dfnew2['Moment (Am^2/kg)'] = dfnew2['Moment (emu)'] / ((mass_2/1000))
 
     if filenumber > 2:
         df3 = pd.read_csv(filename_3, encoding='cp1252', skiprows=header_line_number_3)
         df3.drop(columns=columns, axis=1, inplace=True)
         dfnew3 = df3.dropna()
+        dfnew3['Magnetic Field (T)'] = np.round(dfnew3['Magnetic Field (Oe)'] / (10000.0), 2)
         dfnew3['Moment (Am^2/kg)'] = dfnew3['Moment (emu)'] / ((mass_3/1000))
 
     df4 = dfnew1.copy(deep=True)
