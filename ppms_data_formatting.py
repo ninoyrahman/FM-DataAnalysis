@@ -71,7 +71,7 @@ for index in range(0, num_field_steps):
     dataframe_collection[index].index = np.arange(1, len(dataframe_collection[index]) + 1)
     
     # drop unwanted columns
-    dataframe_collection[index] = dataframe_collection[index].drop([str2, str4], axis=1)
+    dataframe_collection[index] = dataframe_collection[index].drop([str2, str3, str4], axis=1)
     
 # combine all  dataframe_collection to a single dataframe
 dfall_new = dataframe_collection[0].copy()
