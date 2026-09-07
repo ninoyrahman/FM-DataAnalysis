@@ -39,6 +39,7 @@ Created on Tue May 28 17:11:13 2024
 
 import numpy as np
 import pandas as pd
+from tkinter import filedialog, simpledialog
 
 # -----------------------------------------------------------------------------
 # Read input data and define output file
@@ -49,9 +50,14 @@ import pandas as pd
 # Example:
 #     input  -> raw_data/combined_raw_data.csv
 #     output -> raw_data/combined_raw_data_sorted.csv
-filename = input('enter input path/file name (and .ext): ')
-filename_output = input('enter output path/file name (and .ext): ')
+filename = filedialog.askopenfilename(initialdir="/",
+                                            title="Select Input File",
+                                            filetype=(("csv files", "*.csv"),("All Files", "*.*")))
 
+filename_output = filename.replace('.csv', '_sorted.csv')
+filename_output = simpledialog.askstring("Enter Output File", 
+                                         "Enter output path/file name (and .ext):", 
+                                         initialvalue=filename_output)
 # Read the PPMS data into a pandas DataFrame.
 df = pd.read_csv(filename)
 
