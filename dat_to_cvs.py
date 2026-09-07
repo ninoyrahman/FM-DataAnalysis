@@ -74,11 +74,11 @@ def concat_files(debug=True):
                                             initialvalue=filename_4)
 
         # input masses
-        mass_1 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for first file')
+        mass_1 = float(filename_1.split('_')[-1].replace('mg.dat', ''))
         if filenumber > 1:
-            mass_2 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for second file')
+            mass_2 = float(filename_2.split('_')[-1].replace('mg.dat', ''))
         if filenumber > 2:
-            mass_3 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for third file')
+            mass_3 = float(filename_3.split('_')[-1].replace('mg.dat', ''))
     else:
         filenumber = 3
         filename_1 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.02,1,2,5,10T)_2.878mg.dat"
