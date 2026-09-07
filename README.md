@@ -4,6 +4,7 @@ Two Python scripts for processing PPMS measurement data:
 
 - **`dat_to_cvs.py`** – Reads 1–3 raw `.dat` files, extracts data, converts units (Oe → T, emu → Am²/kg), and merges them into a single CSV.
 - **`ppms_data_formatting.py`** – Restructures a combined CSV into wide format, placing moment values for different fields side‑by‑side with field‑specific column headers.
+- **`cooling_heating_seperation.py`** – Separates temperature-dependent measurements into cooling and heating datasets for selected magnetic fields, with optional temperature sorting.
 
 ---
 
@@ -43,6 +44,23 @@ The script:
 - Concatenates horizontally into a wide table.
 
 Output: a CSV with columns ordered by field.
+
+### 3. Separate cooling and heating data (cooling_heating_seperation.py)
+
+```bash
+python cooling_heating_seperation.py
+```
+
+Select the input CSV using the file-selection dialog.
+
+The script:
+
+- Processes measurements at 0.02, 2, 5, and 10 T.
+- Separates each field's data into cooling and heating segments at the minimum-temperature point.
+- Optionally sorts the cooling data from high to low temperature and the heating data from low to high temperature.
+- Combines the field-specific cooling and heating datasets side-by-side.
+
+Output: two CSV files with _cooling.csv and _heating.csv appended to the input filename.
 
 ---
 
