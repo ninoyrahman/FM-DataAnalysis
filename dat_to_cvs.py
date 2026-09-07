@@ -1,9 +1,31 @@
+"""Convert PPMS .dat measurement files into a combined CSV dataset.
+
+The script supports two PPMS device formats. It locates the ``[Data]``
+section, loads the measurement data, removes unused instrument columns,
+drops incomplete rows, converts magnetic field from Oe to T, normalizes
+magnetic moment by sample mass, concatenates up to three files, and saves
+the result as a CSV file.
+
+The ``debug`` argument controls whether filenames and masses are entered
+interactively (``False``) or predefined test data are used (``True``).
+"""
+
 import pandas as pd
 import numpy as np
 
 # function for concating files
 def concat_files(debug=True):
+    """Process and concatenate one to three PPMS measurement files.
+
+    Args:
+        debug (bool): Use predefined test inputs when True; otherwise
+            request filenames and sample masses interactively.
+
+    Returns:
+        None: The processed data are written to the requested CSV file.
+    """
     ppms_dev_num = int(input('Enter PPMS device number:\n'))
+    # Select the expected column layout for the chosen PPMS device.
     if ppms_dev_num == 1:
         columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
                         'Averaging Time (sec)','Frequency (Hz)','Peak Amplitude (mm)','Center Position (mm)','Coil Signal\' (mV)',
@@ -29,7 +51,7 @@ def concat_files(debug=True):
     else:
         print('Error: wrong device number')
     
-    # read file names for concat
+    # Collect input/output filenames and sample masses.
     if not debug:
         filenumber = int(input('Enter number of files:\n'))
         filename_1 = input('first file name: ')
@@ -97,6 +119,11 @@ def concat_files(debug=True):
 
     # print(header_line_number_1, header_line_number_2, header_line_number_3)
 
+    # Read the file(s), skipping the PPMS header section.
+    # Remove columns not required for analysis.
+    # Remove rows containing missing measurement values.
+    # Convert magnetic field from Oe to T and round to 2 decimal points.
+    # Normalize moment by sample mass.
     df1 = pd.read_csv(filename_1, encoding='cp1252', skiprows=header_line_number_1)
     df1.drop(columns=columns, axis=1, inplace=True)
     dfnew1 = df1.dropna()
@@ -117,6 +144,7 @@ def concat_files(debug=True):
         dfnew3['Magnetic Field (T)'] = np.round(dfnew3['Magnetic Field (Oe)'] / (10000.0), 2)
         dfnew3['Moment (Am^2/kg)'] = dfnew3['Moment (emu)'] / ((mass_3/1000))
 
+    # Combine datasets.
     df4 = dfnew1.copy(deep=True)
     if filenumber > 1:
         df4 = pd.concat([df4, dfnew2])
@@ -125,9 +153,10 @@ def concat_files(debug=True):
     # df4.drop(columns=['Moment (emu)'], axis=1, inplace=True)
     df4.to_csv(filename_4, index=False)
 
+    # Save the combined processed measurements as a CSV file.
     df = pd.read_csv(filename_4)
 
-    # print 
+    # Reload the saved CSV for a final check.
     print('')
     print('file name:', filename_1, ', mass = ', mass_1)
     if filenumber > 1:
