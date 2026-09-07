@@ -8,15 +8,18 @@ Created on Tue May 28 17:11:13 2024
 import numpy as np
 import pandas as pd
 
-## inputs (field values and number of field values)
-field_value = np.array([0.02, 0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5., 10.], dtype=np.float64)
-num_field_steps = field_value.size
-
 ## Read data (input and output file names)
 # df = pd.read_csv('raw_data/combined_raw_data.csv')
 filename = input('enter input path/file name (and .ext): ')
 filename_output = input('enter output path/file name (and .ext): ')
 df = pd.read_csv(filename)
+
+## Drop NAN
+dfall = df.dropna()
+
+## read unique Magnetic Field values
+field_value = np.unique(np.array(dfall['Magnetic Field (T)'], dtype=np.float64))
+num_field_steps = field_value.size
 
 ## print out
 print('input file name:  ', filename)
@@ -24,20 +27,13 @@ print('output file name: ', filename_output)
 print('number of field steps = ', num_field_steps)
 print('field_value = ', field_value)
 
-## Drop NAN
-dfall = df.dropna()
-# print(df1.head())
-
-## read unique Magnetic Field values
-mfts = np.unique(np.array(dfall['Magnetic Field (T)'], dtype=np.float64))
-
 ## Separating data based on field values
 df_temp = dfall
 
 dataframe_collection = {}
 dataframe_collection_tmp = {}
 index = 0
-for mft in mfts:
+for mft in field_value:
     
     dataframe_collection_tmp[index] = df_temp[df_temp['Magnetic Field (T)'] == mft]
     
