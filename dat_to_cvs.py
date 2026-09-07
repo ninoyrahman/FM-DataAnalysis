@@ -12,6 +12,7 @@ interactively (``False``) or predefined test data are used (``True``).
 
 import pandas as pd
 import numpy as np
+from tkinter import filedialog, simpledialog
 
 # function for concating files
 def concat_files(debug=True):
@@ -24,7 +25,8 @@ def concat_files(debug=True):
     Returns:
         None: The processed data are written to the requested CSV file.
     """
-    ppms_dev_num = int(input('Enter PPMS device number:\n'))
+    ppms_dev_num = simpledialog.askinteger('PPMS Device Number', 'Enter PPMS device number', initialvalue=1, minvalue=1, maxvalue=2)
+
     # Select the expected column layout for the chosen PPMS device.
     if ppms_dev_num == 1:
         columns=['Comment', 'Time Stamp (sec)', 'M. Std. Err. (emu)','Transport Action',
@@ -53,20 +55,30 @@ def concat_files(debug=True):
     
     # Collect input/output filenames and sample masses.
     if not debug:
-        filenumber = int(input('Enter number of files:\n'))
-        filename_1 = input('first file name: ')
+        filenumber = simpledialog.askinteger('Enter File Number', 'Enter number of input files', initialvalue=1, minvalue=1, maxvalue=3)
+
+        filename_1 = filedialog.askopenfilename(initialdir="/",
+                                                title="First File Name",
+                                                filetype=(("dat files", "*.dat"),("All Files", "*.*")))
         if filenumber > 1:
-            filename_2 = input('second file name: ')
+            filename_2 = filedialog.askopenfilename(initialdir="/",
+                                                    title="Second File Name",
+                                                    filetype=(("dat files", "*.dat"),("All Files", "*.*")))
         if filenumber > 2:
-            filename_3 = input('third file name: ')
-        filename_4 = input('output file name: ')
+            filename_3 = filedialog.askopenfilename(initialdir="/",
+                                                    title="Third File Name",
+                                                    filetype=(("dat files", "*.dat"),("All Files", "*.*")))
+        filename_4 = filename_1.replace('.dat', '.csv')
+        filename_4 = simpledialog.askstring("Enter Output File", 
+                                            "Enter output path/file name (and .ext):", 
+                                            initialvalue=filename_4)
 
         # input masses
-        mass_1 = float(input('Enter mass in mg for first file:\n'))
+        mass_1 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for first file')
         if filenumber > 1:
-            mass_2 = float(input('Enter mass in mg for second file:\n'))
+            mass_2 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for second file')
         if filenumber > 2:
-            mass_3 = float(input('Enter mass in mg for third file:\n'))
+            mass_3 = simpledialog.askfloat('Enter mass', 'Enter mass in mg for third file')
     else:
         filenumber = 3
         filename_1 = "raw_data/FM2025_0448_PP_(La0.9Ce0.1)1.06Fe12B6_M-T(0.02,1,2,5,10T)_2.878mg.dat"
