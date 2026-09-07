@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
+from tkinter import filedialog
 
 dict = {'y': 'yes', 'n': 'no'}
 
-filename = input('enter input path/file name (and .ext): ')
+filename = filedialog.askopenfilename(initialdir="/",
+                                            title="Select Input File",
+                                            filetype=(("csv files", "*.csv"),("All Files", "*.*")))
 filename_cooling = filename.replace('.csv', '_cooling.csv')
 filename_heating = filename.replace('.csv', '_heating.csv')
 sort = str(input('sort according to temperature(y/n): '))
