@@ -1,5 +1,37 @@
 # -*- coding: utf-8 -*-
 """
+PPMS Magnetic Data Formatting
+=============================
+
+This script reformats PPMS magnetic measurement data stored in a CSV file.
+
+Workflow
+--------
+1. Ask the user for the input and output CSV file paths.
+2. Read the PPMS data into a pandas DataFrame.
+3. Remove rows containing missing (NaN) values.
+4. Identify all unique magnetic-field values.
+5. Separate the measurements into individual DataFrames for each field.
+6. Rename the columns so that each column identifies its corresponding field.
+7. Keep only temperature and mass-normalized magnetic moment for each field.
+8. Combine the field-specific data side-by-side into one DataFrame.
+9. Save the reformatted data as a CSV file.
+
+Expected input columns
+----------------------
+The input CSV file is expected to contain at least the following columns:
+    - Temperature (K)
+    - Magnetic Field (Oe)
+    - Magnetic Field (T)
+    - Moment (emu)
+    - Moment (Am^2/kg)
+
+Notes
+-----
+- All rows containing at least one NaN value are removed before processing.
+- The unique values in ``Magnetic Field (T)`` determine the field steps.
+- The output contains temperature and mass-normalized moment for each field.
+
 Created on Tue May 28 17:11:13 2024
 
 @author: ninoy
