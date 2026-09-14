@@ -93,7 +93,7 @@ class PPMSDataProcessingGUI(tk.Tk):
         self.convert_button = self._add_tool(
             tools,
             "1. Convert PPMS .dat → CSV",
-            "Convert 1–3 raw PPMS .dat files into a combined CSV.",
+            "Convert raw PPMS .dat files into a combined CSV.",
             self.run_convert,
         )
 
