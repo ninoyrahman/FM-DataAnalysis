@@ -1,71 +1,384 @@
 # PPMS Data Processing Tools
 
-Two Python scripts for processing PPMS measurement data:
+A Python/Tkinter-based graphical interface for processing magnetic measurement data collected using a **Physical Property Measurement System (PPMS)**.
 
-- **`dat_to_cvs.py`** – Reads 1–3 raw `.dat` files, extracts data, converts units (Oe → T, emu → Am²/kg), and merges them into a single CSV.
-- **`ppms_data_formatting.py`** – Restructures a combined CSV into wide format, placing moment values for different fields side‑by‑side with field‑specific column headers.
-- **`cooling_heating_seperation.py`** – Separates temperature-dependent measurements into cooling and heating datasets for selected magnetic fields, with optional temperature sorting.
+The project consists of two Python files:
+
+* **`data_processing_class.py`** – Contains the three PPMS data-processing functions.
+* **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running the three functions.
+
+The GUI imports the functions directly from `data_processing_class.py`, so both files must be kept in the same directory.
+
+---
+
+## Features
+
+The application provides three PPMS data-processing operations:
+
+1. **Convert PPMS `.dat` → CSV**
+2. **Format PPMS CSV**
+3. **Separate Cooling / Heating**
+
+The processing functions use Tkinter dialogs for selecting files and entering required parameters.
 
 ---
 
 ## Requirements
 
+Python 3 is required.
+
+Install the required Python packages with:
+
 ```bash
 pip install pandas numpy
 ```
 
----
+### Tkinter
 
-## Quick Start
+`tkinter` is included with most standard Python installations.
 
-### 1. Combine raw files (`dat_to_cvs.py`)
-
-- By default, runs in **debug mode** with hard‑coded example files.  
-- To use your own data, set `debug=False` in the `concat_files()` call (inside the script) to enable interactive prompts.
-
-**Interactive input:**  
-- PPMS device number (1 or 2)  
-- Number of files (1–3)  
-- File paths, output CSV name, and sample mass (mg) for each file.
-
-Output: a CSV with added `Magnetic Field (T)` and `Moment (Am²/kg)` columns.
-
-### 2. Reshape to wide format (`ppms_data_formatting.py`)
+On Linux, if Tkinter is not installed, it may be necessary to install it separately. For example, on Debian/Ubuntu:
 
 ```bash
-python ppms_data_formatting.py
+sudo apt install python3-tk
 ```
 
-Enter the input CSV (from step 1) and desired output CSV name.  
-The script:
-- Splits data by unique field values.
-- Renames columns to include the field (e.g., `Temperature (K) @ H=0.02 T`).
-- Drops magnetic field and moment‑in‑emu columns.
-- Concatenates horizontally into a wide table.
+---
 
-Output: a CSV with columns ordered by field.
+## File Structure
 
-### 3. Separate cooling and heating data (cooling_heating_seperation.py)
+Keep the two files together:
+
+```text
+PPMS_Data_Tools/
+├── data_processing_class.py
+└── ppms_data_processing_gui.py
+```
+
+---
+
+## Running the GUI
+
+Open a terminal in the directory containing the two files and run:
 
 ```bash
-python cooling_heating_seperation.py
+python ppms_data_processing_gui.py
 ```
 
-Select the input CSV using the file-selection dialog.
-
-The script:
-
-- Processes measurements at 0.02, 2, 5, and 10 T.
-- Separates each field's data into cooling and heating segments at the minimum-temperature point.
-- Optionally sorts the cooling data from high to low temperature and the heating data from low to high temperature.
-- Combines the field-specific cooling and heating datasets side-by-side.
-
-Output: two CSV files with _cooling.csv and _heating.csv appended to the input filename.
+The **PPMS Data Processing Tools** window will open with three processing buttons.
 
 ---
 
-## Notes
+# Processing Functions
 
-- If you encounter encoding errors, change `encoding='cp1252'` to `'utf-8'` or `'latin1'` in the `read_csv` calls.  
+## 1. Convert PPMS `.dat` → CSV
+
+### Function
+
+```python
+convert_dat_to_cvs()
+```
+
+This function converts raw PPMS `.dat` measurement files into a combined CSV dataset.
+
+It supports **PPMS device 1 and device 2** and:
+
+* Selects the appropriate PPMS column format.
+* Allows the user to select multiple `.dat` files.
+* Locates the `[Data]` section in each PPMS file.
+* Removes unused PPMS instrument/status columns.
+* Removes rows containing missing values.
+* Converts magnetic field from **Oe to T**.
+* Calculates mass-normalized magnetic moment in **Am²/kg**.
+* Combines the selected files.
+* Saves the processed measurements as a CSV file.
+
+The function supports up to three input files.
+
+### Input
+
+Raw PPMS `.dat` files.
+
+The sample mass is extracted from the filename. The expected filename convention therefore includes the mass immediately before `mg.dat`.
+
+For example:
+
+```text
+sample_M-T_2.878mg.dat
+```
+
+### Output
+
+A combined CSV containing the processed PPMS measurements, including:
+
+```text
+Magnetic Field (T)
+Moment (Am^2/kg)
+```
+
+The magnetic field is calculated from the original field in Oe:
+
+```text
+Magnetic Field (T) = Magnetic Field (Oe) / 10000
+```
+
+The mass-normalized moment is calculated using the sample mass.
 
 ---
+
+## 2. Format PPMS CSV
+
+### Function
+
+```python
+ppms_data_formatting()
+```
+
+This function reformats the combined CSV generated by the first processing step into a **wide-format dataset**.
+
+The processing workflow is:
+
+1. Select the input CSV file.
+2. Specify the output CSV filename.
+3. Remove rows containing missing values.
+4. Identify all unique magnetic-field values.
+5. Separate the data according to magnetic field.
+6. Rename columns to include the corresponding field.
+7. Keep temperature and mass-normalized magnetic moment.
+8. Combine the field-specific datasets side-by-side.
+9. Save the resulting CSV file.
+
+### Example output columns
+
+```text
+Temperature (K) @ H=0.02 T
+Moment (Am^2/kg) @ H=0.02 T
+
+Temperature (K) @ H=2.0 T
+Moment (Am^2/kg) @ H=2.0 T
+
+Temperature (K) @ H=5.0 T
+Moment (Am^2/kg) @ H=5.0 T
+```
+
+The function automatically determines the field values from the `Magnetic Field (T)` column rather than requiring a predefined list of fields.
+
+---
+
+## 3. Separate Cooling / Heating
+
+### Function
+
+```python
+cooling_heating_seperation()
+```
+
+This function separates temperature-dependent measurements into **cooling** and **heating** datasets.
+
+The current implementation processes the following magnetic fields:
+
+```text
+0.02 T
+2.0 T
+5.0 T
+10.0 T
+```
+
+For each field, it:
+
+1. Selects the temperature and mass-normalized moment columns.
+2. Removes incomplete rows.
+3. Finds the minimum-temperature measurement.
+4. Uses the minimum-temperature point as the boundary between cooling and heating.
+5. Optionally sorts the cooling and heating measurements by temperature.
+6. Combines the results for all fields.
+7. Saves separate cooling and heating CSV files.
+
+### Sorting
+
+The function asks:
+
+```text
+Sort according to temperature(yes/no):
+```
+
+If `yes` is selected:
+
+* Cooling data are sorted from **high → low temperature**.
+* Heating data are sorted from **low → high temperature**.
+
+### Output
+
+Two files are generated from the selected input CSV:
+
+```text
+input_cooling.csv
+input_heating.csv
+```
+
+The datasets contain the temperature and mass-normalized moment columns for the specified magnetic fields.
+
+---
+
+# Recommended Workflow
+
+For typical PPMS temperature-dependent magnetic measurements, the recommended workflow is:
+
+```text
+Raw PPMS .dat files
+        │
+        ▼
+┌─────────────────────────┐
+│ Convert PPMS .dat → CSV │
+└────────────┬────────────┘
+             │
+             ▼
+     Combined CSV file
+             │
+             ▼
+┌─────────────────────────┐
+│    Format PPMS CSV      │
+└────────────┬────────────┘
+             │
+             ▼
+       Wide-format CSV
+             │
+             ▼
+┌──────────────────────────────┐
+│ Separate Cooling / Heating   │
+└──────────────┬───────────────┘
+               │
+        ┌──────┴──────┐
+        ▼             ▼
+   Cooling CSV     Heating CSV
+```
+
+The three operations can also be run independently when the input data are already in the appropriate format.
+
+---
+
+# GUI
+
+The GUI provides three buttons:
+
+```text
+1. Convert PPMS .dat → CSV
+
+2. Format PPMS CSV
+
+3. Separate Cooling / Heating
+```
+
+The GUI also includes a **Processing Output** area that displays messages produced by the selected function and reports processing errors.
+
+The GUI calls the original functions directly:
+
+```python
+convert_dat_to_cvs()
+ppms_data_formatting()
+cooling_heating_seperation()
+```
+
+This means that the data-processing algorithms remain in `data_processing_class.py`, while the GUI is responsible only for providing a convenient user interface.
+
+---
+
+# Important Notes
+
+### Keep both files together
+
+The GUI imports the processing functions using:
+
+```python
+from data_processing_class import (
+    convert_dat_to_cvs,
+    ppms_data_formatting,
+    cooling_heating_seperation,
+)
+```
+
+Therefore, `data_processing_class.py` must be accessible in the same directory as the GUI.
+
+### PPMS file encoding
+
+The raw `.dat` files are read using:
+
+```python
+encoding='cp1252'
+```
+
+If an encoding error occurs with a particular PPMS file, the encoding may need to be adjusted in `data_processing_class.py`.
+
+### Sample mass
+
+For `.dat` → CSV conversion, the sample mass is obtained from the input filename. Make sure the filenames follow the expected convention, for example:
+
+```text
+Sample_M-T_2.878mg.dat
+```
+
+### Cooling/heating fields
+
+The cooling/heating function currently uses:
+
+```python
+field_values = [0.02, 2.0, 5.0, 10.0]
+```
+
+If different magnetic fields are required, this list can be modified in `data_processing_class.py`.
+
+---
+
+# Troubleshooting
+
+## `ModuleNotFoundError: No module named 'data_processing_class'`
+
+Make sure the files are in the same directory:
+
+```text
+data_processing_class.py
+ppms_data_processing_gui.py
+```
+
+Then run the GUI from that directory.
+
+## `ModuleNotFoundError: No module named 'pandas'`
+
+Install the required packages:
+
+```bash
+pip install pandas numpy
+```
+
+## Tkinter is not available
+
+On Debian/Ubuntu Linux:
+
+```bash
+sudo apt install python3-tk
+```
+
+On Windows and most standard Python installations, Tkinter is normally included.
+
+## Processing error
+
+Check the **Processing Output** section of the GUI for the error message. Common causes include:
+
+* Incorrect PPMS file format.
+* Missing expected columns.
+* Incorrect sample-mass information in the filename.
+* Missing input files.
+* Incompatible CSV structure.
+
+---
+
+# Version Information
+
+This project consists of:
+
+```text
+data_processing_class.py
+ppms_data_processing_gui.py
+```
+
+The GUI is intended as a front end to the processing functions and does not duplicate their data-processing algorithms.
