@@ -4,8 +4,8 @@ A Python/Tkinter-based graphical interface for processing magnetic measurement d
 
 The project consists of two Python files:
 
-* **`data_processing_class.py`** – Contains the three PPMS data-processing functions.
-* **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running the three functions.
+* **`data_processing_class.py`** – Contains the various PPMS data-processing functions and area calculation.
+* **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running the various functions.
 
 The GUI imports the functions directly from `data_processing_class.py`, so both files must be kept in the same directory.
 
@@ -13,7 +13,7 @@ The GUI imports the functions directly from `data_processing_class.py`, so both 
 
 ## Features
 
-The application provides three PPMS data-processing operations:
+The application provides various PPMS data-processing operations and area calculation:
 
 1. **Convert PPMS `.dat` → CSV**
 2. **Format PPMS CSV**
@@ -66,7 +66,7 @@ Open a terminal in the directory containing the two files and run:
 python ppms_data_processing_gui.py
 ```
 
-The **PPMS Data Processing Tools** window will open with three processing buttons.
+The **PPMS Data Processing Tools** window will open with various processing buttons.
 
 ---
 
@@ -93,8 +93,6 @@ It supports **PPMS device 1 and device 2** and:
 * Calculates mass-normalized magnetic moment in **Am²/kg**.
 * Combines the selected files.
 * Saves the processed measurements as a CSV file.
-
-The function supports up to three input files.
 
 ### Input
 
@@ -298,36 +296,7 @@ Raw PPMS .dat files
    Cooling CSV     Heating CSV
 ```
 
-The four operations can be run independently when the input data are already in the appropriate format. The TIFF image area calculation is independent of the PPMS CSV workflow.
-
----
-
-# GUI
-
-The GUI provides three buttons:
-
-```text
-1. Convert PPMS .dat → CSV
-
-2. Format PPMS CSV
-
-3. Separate Cooling / Heating
-
-4. Calculate Areas
-```
-
-The GUI also includes a **Processing Output** area that displays messages produced by the selected function and reports processing errors.
-
-The GUI calls the original functions directly:
-
-```python
-convert_dat_to_cvs()
-ppms_data_formatting()
-cooling_heating_seperation()
-calculate_areas()
-```
-
-This means that the data-processing algorithms remain in `data_processing_class.py`, while the GUI is responsible only for providing a convenient user interface.
+The various operations can be run independently when the input data are already in the appropriate format. The TIFF image area calculation is independent of the PPMS CSV workflow.
 
 ---
 
