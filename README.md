@@ -18,6 +18,7 @@ The application provides three PPMS data-processing operations:
 1. **Convert PPMS `.dat` → CSV**
 2. **Format PPMS CSV**
 3. **Separate Cooling / Heating**
+4. **Calculate Areas**
 
 The processing functions use Tkinter dialogs for selecting files and entering required parameters.
 
@@ -30,7 +31,7 @@ Python 3 is required.
 Install the required Python packages with:
 
 ```bash
-pip install pandas numpy
+pip install pandas numpy opencv-python matplotlib scipy
 ```
 
 ### Tkinter
@@ -220,6 +221,50 @@ The datasets contain the temperature and mass-normalized moment columns for the 
 
 ---
 
+## 4. Calculate Areas from TIFF Images
+
+### Function
+
+```python
+calculate_areas()
+```
+
+The area-calculation function analyzes grayscale TIFF images by examining
+their pixel-intensity distributions.
+
+The workflow is:
+
+1. Select one or more TIFF images.
+2. Remove the bottom 200 rows of each image.
+3. Generate a 1000-bin intensity histogram.
+4. Detect histogram peaks.
+5. Fit either a two- or three-Gaussian model depending on the detected peaks.
+6. Calculate the percentage of pixels within **±3σ** of each fitted Gaussian peak.
+7. Calculate the area below the upper 3σ boundary of the lowest-intensity Gaussian.
+8. Optionally display the histogram and fitted model.
+
+### Input
+
+Grayscale TIFF images (`.tif` or `.tiff`).
+
+Multiple images can be selected through the GUI.
+
+### Gaussian fitting
+
+The histogram is modeled using a Gaussian mixture. Depending on the detected
+histogram structure, either two or three Gaussian components are fitted.
+
+### Output
+
+The calculated area percentages are printed to the Processing Output area
+of the GUI. Areas are calculated within `mu - 3σ` and `mu + 3σ` of fitted Gaussian peaks. 
+
+### Plotting
+
+The histogram and fitted Gaussian-mixture model can optionally be displayed.
+
+---
+
 # Recommended Workflow
 
 For typical PPMS temperature-dependent magnetic measurements, the recommended workflow is:
@@ -253,7 +298,7 @@ Raw PPMS .dat files
    Cooling CSV     Heating CSV
 ```
 
-The three operations can also be run independently when the input data are already in the appropriate format.
+The four operations can be run independently when the input data are already in the appropriate format. The TIFF image area calculation is independent of the PPMS CSV workflow.
 
 ---
 
@@ -267,6 +312,8 @@ The GUI provides three buttons:
 2. Format PPMS CSV
 
 3. Separate Cooling / Heating
+
+4. Calculate Areas
 ```
 
 The GUI also includes a **Processing Output** area that displays messages produced by the selected function and reports processing errors.
@@ -277,98 +324,10 @@ The GUI calls the original functions directly:
 convert_dat_to_cvs()
 ppms_data_formatting()
 cooling_heating_seperation()
+calculate_areas()
 ```
 
 This means that the data-processing algorithms remain in `data_processing_class.py`, while the GUI is responsible only for providing a convenient user interface.
-
----
-
-# Important Notes
-
-### Keep both files together
-
-The GUI imports the processing functions using:
-
-```python
-from data_processing_class import (
-    convert_dat_to_cvs,
-    ppms_data_formatting,
-    cooling_heating_seperation,
-)
-```
-
-Therefore, `data_processing_class.py` must be accessible in the same directory as the GUI.
-
-### PPMS file encoding
-
-The raw `.dat` files are read using:
-
-```python
-encoding='cp1252'
-```
-
-If an encoding error occurs with a particular PPMS file, the encoding may need to be adjusted in `data_processing_class.py`.
-
-### Sample mass
-
-For `.dat` → CSV conversion, the sample mass is obtained from the input filename. Make sure the filenames follow the expected convention, for example:
-
-```text
-Sample_M-T_2.878mg.dat
-```
-
-### Cooling/heating fields
-
-The cooling/heating function currently uses:
-
-```python
-field_values = [0.02, 2.0, 5.0, 10.0]
-```
-
-If different magnetic fields are required, this list can be modified in `data_processing_class.py`.
-
----
-
-# Troubleshooting
-
-## `ModuleNotFoundError: No module named 'data_processing_class'`
-
-Make sure the files are in the same directory:
-
-```text
-data_processing_class.py
-ppms_data_processing_gui.py
-```
-
-Then run the GUI from that directory.
-
-## `ModuleNotFoundError: No module named 'pandas'`
-
-Install the required packages:
-
-```bash
-pip install pandas numpy
-```
-
-## Tkinter is not available
-
-On Debian/Ubuntu Linux:
-
-```bash
-sudo apt install python3-tk
-```
-
-On Windows and most standard Python installations, Tkinter is normally included.
-
-## Processing error
-
-Check the **Processing Output** section of the GUI for the error message. Common causes include:
-
-* Incorrect PPMS file format.
-* Missing expected columns.
-* Incorrect sample-mass information in the filename.
-* Missing input files.
-* Incompatible CSV structure.
 
 ---
 
