@@ -8,6 +8,7 @@ data_processing_class.py:
     1. convert_dat_to_cvs()
     2. ppms_data_formatting()
     3. cooling_heating_seperation()
+    4. calculate_areas()
 
 Keep this GUI and data_processing_class.py in the same folder.
 """
@@ -22,6 +23,7 @@ try:
         convert_dat_to_cvs,
         ppms_data_formatting,
         cooling_heating_seperation,
+        calculate_areas,
     )
     IMPORT_ERROR = None
 except Exception as exc:
@@ -35,7 +37,7 @@ class PPMSDataProcessingGUI(tk.Tk):
         super().__init__()
 
         self.title("PPMS Data Processing Tools")
-        self.geometry("780x610")
+        self.geometry("780x720")
         self.minsize(700, 540)
 
         self._configure_style()
@@ -109,6 +111,13 @@ class PPMSDataProcessingGUI(tk.Tk):
             "3. Separate Cooling / Heating",
             "Separate temperature-dependent data into cooling and heating datasets.",
             self.run_cooling_heating,
+        )
+
+        self.calculate_areas_button = self._add_tool(
+                    tools,
+                    "4. Calculate Areas",
+                    "Calculate areas from tiff images.",
+                    self.run_calculate_areas,
         )
 
         # Status ------------------------------------------------------------
@@ -285,6 +294,13 @@ class PPMSDataProcessingGUI(tk.Tk):
             cooling_heating_seperation,
             "cooling_heating_seperation()",
         )
+
+    def run_calculate_areas(self):
+            """Run the calculate areas function."""
+            self._run_function(
+                calculate_areas,
+                "calculate_areas()",
+            )
 
 
 def main():
