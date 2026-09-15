@@ -2,6 +2,121 @@ import pandas as pd
 import numpy as np
 from tkinter import filedialog, simpledialog
 
+import cv2, sys
+from matplotlib import pyplot as plt
+from matplotlib import rcParams
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks_cwt
+
+def gauss(x,mu,sigma,A):
+    return A*np.exp(-(x-mu)**2/2/sigma**2)
+
+def bimodal(x,mu1,sigma1,A1,mu2,sigma2,A2):
+    return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)
+
+def bimodal_3(x,mu1,sigma1,A1,mu2,sigma2,A2,mu3,sigma3,A3):
+    return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)+gauss(x,mu3,sigma3,A3)
+
+
+def calculate_area(filename, plot='yes'):
+    """
+    Calculate intensity-distribution areas for one TIFF image.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the TIFF image.
+    """
+    # img = cv2.imread('image/FM2025_0355_PP_La1.03Fe12B6_1100C, 1d, Zirc wrap (2026)-4.1.tif', 0)
+    img = cv2.imread(filename, 0)
+    img_clean = img[:-200, :]
+
+    var = 3
+    num_bins = 1000
+    img_max = img_clean.max()
+    img_min = img_clean.min()
+
+    counts, bins = np.histogram(img_clean, bins=num_bins, range=(img_min, img_max))
+    total_area = counts.sum()
+    x = (bins[1:] + bins[:-1]) / 2
+
+    peaks = find_peaks_cwt(counts, widths=50)
+    x_peaks = x[peaks]
+    num_peaks = x_peaks.size-1
+    print('')
+    print('filename = ', filename)
+    print('width = ', var, '* sigma')
+    print('number of peaks = ', num_peaks)
+
+    # curve fitting
+    if num_peaks == 2:
+        expected = (x_peaks[1], 10, 1000, x_peaks[2], 10, 1000)
+        params, cov = curve_fit(bimodal, x, counts, expected)
+    elif num_peaks == 3:
+        expected = (x_peaks[1], 10, 1000, x_peaks[2], 10, 1000, x_peaks[3], 10, 1000)
+        params, cov = curve_fit(bimodal_3, x, counts, expected)
+    else:
+        sys.exit('Number of peaks > 3')
+
+    sigma=np.sqrt(np.diag(cov))
+
+    mu = params[0]
+    sigma = np.abs(params[1])
+    x_min = mu - var * sigma
+    x_max = mu + var * sigma
+    area = np.array(counts, copy=True)
+    area[x < x_min] = 0
+    area[x > x_max] = 0
+    print('area(%) =', np.round(area.sum()*100/total_area, 2))
+
+    mu = params[3]
+    sigma = np.abs(params[4])
+    x_min = mu - var * sigma
+    x_max = mu + var * sigma
+    area = np.array(counts, copy=True)
+    area[x < x_min] = 0
+    area[x > x_max] = 0
+    print('area(%) =', np.round(area.sum()*100/total_area, 2))
+
+    if num_peaks == 3:
+        mu = params[6]
+        sigma = np.abs(params[7])
+        x_min = mu - var * sigma
+        x_max = mu + var * sigma
+        area = np.array(counts, copy=True)
+        area[x < x_min] = 0
+        area[x > x_max] = 0
+        print('area(%) =', np.round(area.sum()*100/total_area, 2))
+
+    idx = np.argmin(params[::3])
+    mu =  params[idx]
+    sigma = np.abs(params[idx+1])
+    x_min = 0
+    x_max = mu - var * sigma
+    area = np.array(counts, copy=True)
+    area[x > x_max] = 0
+    print('area(%) =', np.round(area.sum()*100/total_area, 2))
+    print('')
+
+    if plot == 'yes':
+        rcParams['figure.figsize'] = 12, 6
+        plt.stairs(counts, bins)
+        plt.plot(x, bimodal(x, *params), color='red', lw=3, label='model')
+        plt.title(filename)
+        plt.show()
+
+def calculate_areas():
+    """Select multiple TIFF files and calculate their areas."""
+    filenames = filedialog.askopenfilenames(initialdir="/",
+                                            title="File Names",
+                                            filetype=(("tif files", "*.tif"),("All Files", "*.*")))
+
+    plot = simpledialog.askstring("Plot Data", 
+                                    "Plot histogram(yes/no):", 
+                                    initialvalue='no')
+    for filename in filenames:
+        calculate_area(filename, plot)
+
 def convert_dat_to_cvs():
     """
     Convert PPMS .dat measurement files into a combined CSV dataset.
