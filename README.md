@@ -80,6 +80,8 @@ Open a terminal in the directory containing the two files and run:
 python ppms_data_processing_gui.py
 ```
 
+or run the executable `ppms_data_processing` from the dist/ folder.
+
 The **PPMS Data Processing Tools** window will open with various processing buttons.
 
 ---
@@ -250,9 +252,9 @@ The workflow is:
 2. Remove the bottom 200 rows of each image.
 3. Generate a 1000-bin intensity histogram.
 4. Detect histogram peaks.
-5. Fit either a two- or three-Gaussian model depending on the detected peaks.
-6. Calculate the percentage of pixels within **±3σ** of each fitted Gaussian peak.
-7. Calculate the area below the upper 3σ boundary of the lowest-intensity Gaussian.
+5. Fit either a multiple Gaussian/Gamma model depending on the detected peaks.
+6. Calculate the percentage of pixels within CI=99% of each fitted peak.
+7. Calculate the area below the lower 3σ (or equivalent) boundary of the first peak.
 8. Optionally display the histogram and fitted model.
 
 ### Input
@@ -261,19 +263,19 @@ Grayscale TIFF images (`.tif` or `.tiff`).
 
 Multiple images can be selected through the GUI.
 
-### Gaussian fitting
+### Fitting
 
-The histogram is modeled using a Gaussian mixture. Depending on the detected
-histogram structure, either two or three Gaussian components are fitted.
+The histogram is modeled using a Gaussian/Gamma mixture. Depending on the detected
+histogram structure, multiple distributions are fitted.
 
 ### Output
 
 The calculated area percentages are printed to the Processing Output area
-of the GUI. Areas are calculated within `mu - 3σ` and `mu + 3σ` of fitted Gaussian peaks. 
+of the GUI. Areas are calculated within CI=99% of fitted peaks. 
 
 ### Plotting
 
-The histogram and fitted Gaussian-mixture model can optionally be displayed.
+Optionally, the histogram and fitted model can be displayed.
 
 ---
 

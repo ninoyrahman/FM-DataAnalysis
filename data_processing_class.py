@@ -101,12 +101,14 @@ def calculate_area(filename, use_gamma='no', plot='no'):
     sigma=np.sqrt(np.diag(cov))
 
     x_max_low = bins[-1]
+    x_min_high = bins[0]
 
     if use_gamma == 'no':
         for mu, sigma in zip(params[::3], params[1::3]):
             x_min = mu - var * sigma
             x_max = mu + var * sigma
             x_max_low = min(x_max_low, x_min)
+            x_min_high = max(x_min_high, x_max)
             area = np.array(counts, copy=True)
             area[x < x_min] = 0
             area[x > x_max] = 0
@@ -116,6 +118,7 @@ def calculate_area(filename, use_gamma='no', plot='no'):
             x_min = gamma.ppf(0.0027, a=alpha, loc=mu, scale=theta)
             x_max = gamma.ppf(0.9973, a=alpha, loc=mu, scale=theta)
             x_max_low = min(x_max_low, x_min)
+            x_min_high = max(x_min_high, x_max)
             area = np.array(counts, copy=True)
             area[x < x_min] = 0
             area[x > x_max] = 0
@@ -124,7 +127,12 @@ def calculate_area(filename, use_gamma='no', plot='no'):
     area = np.array(counts, copy=True)
     x_max = x_max_low
     area[x > x_max] = 0
-    print('area(%) =', np.round(area.sum()*100/total_area, 2))
+    print('crack/pore area(%) =', np.round(area.sum()*100/total_area, 2))
+
+    area = np.array(counts, copy=True)
+    x_min = x_min_high
+    area[x < x_min] = 0
+    print('oxide area(%) =', np.round(area.sum()*100/total_area, 2))
 
     if plot == 'yes':
         plt.stairs(counts, bins)
