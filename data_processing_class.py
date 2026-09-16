@@ -7,18 +7,48 @@ from matplotlib import pyplot as plt
 from matplotlib import rcParams
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks_cwt
+from scipy.stats import gamma
 
 def gauss(x,mu,sigma,A):
     return A*np.exp(-(x-mu)**2/2/sigma**2)
 
-def bimodal(x,mu1,sigma1,A1,mu2,sigma2,A2):
-    return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)
+def multi_gauss(x, plist):
+    """
+    Sum of N Gaussians.
 
-def bimodal_3(x,mu1,sigma1,A1,mu2,sigma2,A2,mu3,sigma3,A3):
-    return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)+gauss(x,mu3,sigma3,A3)
+    plist = [mu1, sigma1, A1, mu2, sigma2, A2, mu3, sigma3, A3, ...]
+    len(plist) must be a multiple of 3.
+    """
+    y = np.zeros_like(x, dtype=float)
+    for i in range(0, len(plist), 3):
+        y += gauss(x, plist[i], plist[i + 1], plist[i + 2])
+    return y
 
+def multi_gamma(x, plist):
+    """
+    Sum of N Gamma.
 
-def calculate_area(filename, plot='yes'):
+    plist = [mu1, alpha1, theta1, A1, mu2, alpha2, theta2, A2, mu3, alpha3, theta3, A3, ...]
+    len(plist) must be a multiple of 4.
+    """
+    y = np.zeros_like(x, dtype=float)
+    for i in range(0, len(plist), 4):
+        y += plist[i + 3]*gamma.pdf(x, a=plist[i + 1], loc=plist[i], scale=plist[i + 2])
+    return y
+
+def make_model(use_gamma='no'):
+    """
+    Returns a function f(x, *flat_params) that curve_fit can use,
+    which internally calls multi_gauss(x, list(flat_params)).
+    """
+    def model(x, *flat_params):
+        if use_gamma == 'no':
+            return multi_gauss(x, list(flat_params))
+        else:
+            return multi_gamma(x, list(flat_params))
+    return model
+
+def calculate_area(filename, use_gamma='no', plot='no'):
     """
     Calculate intensity-distribution areas for one TIFF image.
 
@@ -26,6 +56,10 @@ def calculate_area(filename, plot='yes'):
     ----------
     filename : str
         Path to the TIFF image.
+    use_gamma : str, optional
+        If 'yes', use Gamma distributions for fitting, otherwise Gaussian distributions.
+    plot : str, optional
+        If 'yes', display the histogram and fitted distribution mixture.
     """
     # img = cv2.imread('image/FM2025_0355_PP_La1.03Fe12B6_1100C, 1d, Zirc wrap (2026)-4.1.tif', 0)
     img = cv2.imread(filename, 0)
@@ -43,66 +77,58 @@ def calculate_area(filename, plot='yes'):
     peaks = find_peaks_cwt(counts, widths=50)
     x_peaks = x[peaks]
     num_peaks = x_peaks.size-1
-    print('')
     print('filename = ', filename)
-    print('width = ', var, '* sigma')
+    print('Gamma fitting = ', use_gamma)
     print('number of peaks = ', num_peaks)
 
     # curve fitting
-    if num_peaks == 2:
-        expected = (x_peaks[1], 10, 1000, x_peaks[2], 10, 1000)
-        params, cov = curve_fit(bimodal, x, counts, expected)
-    elif num_peaks == 3:
-        expected = (x_peaks[1], 10, 1000, x_peaks[2], 10, 1000, x_peaks[3], 10, 1000)
-        params, cov = curve_fit(bimodal_3, x, counts, expected)
+    expected = []
+    if use_gamma == 'no':
+        for idx in range(num_peaks):
+            expected.append(x_peaks[idx+1])
+            expected.append(10.0)
+            expected.append(1000.0)
     else:
-        sys.exit('Number of peaks > 3')
+        for idx in range(num_peaks):
+            expected.append(x_peaks[idx+1])
+            expected.append(9.0)
+            expected.append(0.5)
+            expected.append(1000.0)
+
+    model = make_model(use_gamma)
+    params, cov = curve_fit(model, x, counts, expected)
 
     sigma=np.sqrt(np.diag(cov))
 
-    mu = params[0]
-    sigma = np.abs(params[1])
-    x_min = mu - var * sigma
-    x_max = mu + var * sigma
+    x_max_low = bins[-1]
+
+    if use_gamma == 'no':
+        for mu, sigma in zip(params[::3], params[1::3]):
+            x_min = mu - var * sigma
+            x_max = mu + var * sigma
+            x_max_low = min(x_max_low, x_min)
+            area = np.array(counts, copy=True)
+            area[x < x_min] = 0
+            area[x > x_max] = 0
+            print('area(%) =', np.round(area.sum()*100/total_area, 2))
+    else:
+        for mu, alpha, theta in zip(params[::4], params[1::4], params[2::4]):
+            x_min = gamma.ppf(0.0027, a=alpha, loc=mu, scale=theta)
+            x_max = gamma.ppf(0.9973, a=alpha, loc=mu, scale=theta)
+            x_max_low = min(x_max_low, x_min)
+            area = np.array(counts, copy=True)
+            area[x < x_min] = 0
+            area[x > x_max] = 0
+            print('area(%) =', np.round(area.sum()*100/total_area, 2))
+
     area = np.array(counts, copy=True)
-    area[x < x_min] = 0
+    x_max = x_max_low
     area[x > x_max] = 0
     print('area(%) =', np.round(area.sum()*100/total_area, 2))
-
-    mu = params[3]
-    sigma = np.abs(params[4])
-    x_min = mu - var * sigma
-    x_max = mu + var * sigma
-    area = np.array(counts, copy=True)
-    area[x < x_min] = 0
-    area[x > x_max] = 0
-    print('area(%) =', np.round(area.sum()*100/total_area, 2))
-
-    if num_peaks == 3:
-        mu = params[6]
-        sigma = np.abs(params[7])
-        x_min = mu - var * sigma
-        x_max = mu + var * sigma
-        area = np.array(counts, copy=True)
-        area[x < x_min] = 0
-        area[x > x_max] = 0
-        print('area(%) =', np.round(area.sum()*100/total_area, 2))
-
-    idx = np.argmin(params[::3])
-    mu =  params[idx]
-    sigma = np.abs(params[idx+1])
-    x_min = 0
-    x_max = mu - var * sigma
-    area = np.array(counts, copy=True)
-    area[x > x_max] = 0
-    print('area(%) =', np.round(area.sum()*100/total_area, 2))
-    print('')
 
     if plot == 'yes':
-        rcParams['figure.figsize'] = 12, 6
         plt.stairs(counts, bins)
-        plt.plot(x, bimodal(x, *params), color='red', lw=3, label='model')
-        plt.title(filename)
+        plt.plot(x, model(x, *params), color='red', lw=3, label='model')
         plt.show()
 
 def calculate_areas():
@@ -111,11 +137,21 @@ def calculate_areas():
                                             title="File Names",
                                             filetype=(("tif files", "*.tif"),("All Files", "*.*")))
 
+    use_gamma = simpledialog.askstring("Use Gamma", 
+                                "Use gamma distribution fitting(yes/no):", 
+                                initialvalue='no')
+    slist = ['yes', 'no']
+    if use_gamma not in slist:
+        sys.exit('use gamma should be yes/no')
+
     plot = simpledialog.askstring("Plot Data", 
-                                    "Plot histogram(yes/no):", 
-                                    initialvalue='no')
+                                "Plot histogram(yes/no):", 
+                                initialvalue='no')
+    if plot not in slist:
+        sys.exit('plot should be yes/no')
+
     for filename in filenames:
-        calculate_area(filename, plot)
+        calculate_area(filename, use_gamma=use_gamma, plot=plot)
 
 def convert_dat_to_cvs():
     """

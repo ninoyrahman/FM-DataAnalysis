@@ -11,7 +11,8 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=['yt-dlp', 'ipython', 'jupyter', 'jupyterlab', 'plotly', 'mpi4py', 'keras', 'shapely', 'camelot-py',
-            'sympy', 'tensorflow', 'sklearn', 'numba', 'h5py', 'cupy', 'cupyx', 'cython', 'torch', 'pymatting'],
+            'sympy', 'tensorflow', 'sklearn', 'numba', 'h5py', 'cupy', 'cupyx', 'Cython', 'torch', 'pymatting',
+            'alphashape', 'contourpy', 'lxml'],
     noarchive=False,
     optimize=0,
 )

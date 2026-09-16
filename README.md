@@ -44,6 +44,20 @@ On Linux, if Tkinter is not installed, it may be necessary to install it separat
 sudo apt install python3-tk
 ```
 
+PyInstaller is required to build the application. Install it using pip:
+
+```bash
+pip install -U pyinstaller
+```
+
+Then build the executable with the provided spec file:
+
+```bash
+pyinstaller ppms_data_processing.spec
+```
+
+The built application will be created in the dist/ directory.
+
 ---
 
 ## File Structure
