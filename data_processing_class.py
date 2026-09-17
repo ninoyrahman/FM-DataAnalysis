@@ -76,7 +76,8 @@ def calculate_area(filename, use_gamma='no', plot='no'):
 
     peaks = find_peaks_cwt(counts, widths=50)
     x_peaks = x[peaks]
-    num_peaks = x_peaks.size-1
+    x_peaks = x_peaks[(x_peaks >= 20) & (x_peaks <= 235)]
+    num_peaks = x_peaks.size
     print('filename = ', filename)
     print('Gamma fitting = ', use_gamma)
     print('number of peaks = ', num_peaks)
@@ -85,12 +86,12 @@ def calculate_area(filename, use_gamma='no', plot='no'):
     expected = []
     if use_gamma == 'no':
         for idx in range(num_peaks):
-            expected.append(x_peaks[idx+1])
+            expected.append(x_peaks[idx])
             expected.append(10.0)
             expected.append(1000.0)
     else:
         for idx in range(num_peaks):
-            expected.append(x_peaks[idx+1])
+            expected.append(x_peaks[idx])
             expected.append(9.0)
             expected.append(0.5)
             expected.append(1000.0)
@@ -105,7 +106,7 @@ def calculate_area(filename, use_gamma='no', plot='no'):
 
     areas = []
     if use_gamma == 'no':
-        for mu, sigma in zip(params[::3], params[1::3]):
+        for mu, sigma in zip(params[::3], np.abs(params[1::3])):
             x_min = mu - var * sigma
             x_max = mu + var * sigma
             x_max_low = min(x_max_low, x_min)
