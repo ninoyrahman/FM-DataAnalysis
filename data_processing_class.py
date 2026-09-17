@@ -165,15 +165,32 @@ def calculate_areas():
     if plot not in slist:
         sys.exit('plot should be yes/no')
 
-    df = pd.DataFrame(columns=['filename', 'peak area-1 (%)','peak area-2 (%)','peak area-3 (%)','crack/pore area (%)','oxide area(%)'])
-    for filename, idx in zip(filenames, range(len(filenames))):
-        areas, num_peaks = calculate_area(filename, use_gamma=use_gamma, plot=plot)
-        df.loc[idx, 'filename'] = filename
-        df.loc[idx, 'peak area-1 (%)'] = areas[0]
-        df.loc[idx, 'peak area-2 (%)'] = areas[1] if num_peaks > 1 else 0
-        df.loc[idx, 'peak area-3 (%)'] = areas[2] if num_peaks > 2 else 0
-        df.loc[idx, 'crack/pore area (%)'] = areas[-2]
-        df.loc[idx, 'oxide area(%)'] = areas[-1]
+    areas = []
+    num_peaks = []
+    for filename in filenames:
+        areas_tmp, num_peaks_tmp = calculate_area(filename, use_gamma=use_gamma, plot=plot)
+        areas.append(areas_tmp)
+        num_peaks.append(num_peaks_tmp)
+
+    num_peaks_max = max(num_peaks)
+    peak_cols = [f'peak area-{i+1} (%)' for i in range(num_peaks_max)]
+    columns = ['filename'] + peak_cols + ['crack/pore area (%)', 'oxide area (%)']
+
+    rows = []
+    for filename, area, n in zip(filenames, areas, num_peaks):
+        row = {'filename': filename}
+
+        # peak areas (pad with 0 if this file has fewer peaks)
+        for i, col in enumerate(peak_cols):
+            row[col] = area[i] if n > i else 0
+
+        # trailing fixed fields
+        row['crack/pore area (%)'] = area[-2]
+        row['oxide area (%)'] = area[-1]
+
+        rows.append(row)
+
+    df = pd.DataFrame(rows, columns=columns)
 
     filename_output = filenames[0].replace('.tif', '.csv')
     filename_output = simpledialog.askstring("Enter Output File", 
