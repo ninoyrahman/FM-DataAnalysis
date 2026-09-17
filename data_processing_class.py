@@ -6,7 +6,7 @@ import cv2, sys
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks_cwt
+from scipy.signal import find_peaks_cwt, find_peaks
 from scipy.stats import gamma
 
 def gauss(x,mu,sigma,A):
@@ -48,7 +48,50 @@ def make_model(use_gamma='no'):
             return multi_gamma(x, list(flat_params))
     return model
 
-def calculate_area(filename, use_gamma='no', plot='no'):
+def find_overlap_boundaries(model, params, x_mins, x_maxs, num_points=1000):
+    """
+    Adjust overlapping distribution bounds to the local minimum between
+    adjacent fitted Gaussian/Gamma distributions.
+    """
+    order = np.argsort(x_mins)
+    x_mins = x_mins[order]
+    x_maxs = x_maxs[order]
+
+    for i in range(len(x_mins) - 1):
+        if x_maxs[i] >= x_mins[i + 1]:
+
+            left = x_mins[i + 1]
+            right = x_maxs[i]
+
+            if left >= right:
+                continue
+
+            x_local = np.linspace(left, right, num_points)
+            y_local = model(x_local, *params)
+
+            # Local minima of the fitted mixture.
+            minima, _ = find_peaks(-y_local)
+
+            if minima.size:
+                # If several minima exist, choose the one closest to
+                # the midpoint between the two distributions.
+                midpoint = (left + right) / 2
+                idx = minima[np.argmin(np.abs(x_local[minima] - midpoint))]
+            else:
+                # Fallback for strongly overlapping distributions.
+                idx = np.argmin(y_local)
+
+            boundary = float(x_local[idx])
+
+            # Make the two distributions meet at the local minimum.
+            x_maxs[i] = boundary
+            x_mins[i + 1] = boundary
+
+    # Restore original distribution order.
+    inverse = np.argsort(order)
+    return x_mins[inverse], x_maxs[inverse]
+
+def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
     """
     Calculate intensity-distribution areas for one TIFF image.
 
@@ -76,11 +119,20 @@ def calculate_area(filename, use_gamma='no', plot='no'):
 
     peaks = find_peaks_cwt(counts, widths=50)
     x_peaks = x[peaks]
-    x_peaks = x_peaks[(x_peaks >= 20) & (x_peaks <= 235)]
+    if input_limit == 'yes':
+        x_peaks_low  = simpledialog.askfloat('Lower Cut-Off', 'Enter lower cut-off', initialvalue=50)
+        x_peaks_high = simpledialog.askfloat('Upper Cut-Off', 'Enter upper cut-off', initialvalue=235)
+    else:
+        x_peaks_low  = 50
+        x_peaks_high = 235
+    x_peaks = x_peaks[(x_peaks >= x_peaks_low) & (x_peaks <= x_peaks_high)]
     num_peaks = x_peaks.size
+
     print('filename = ', filename)
     print('Gamma fitting = ', use_gamma)
-    print('number of peaks = ', num_peaks)
+    print('lower cut-off = ', x_peaks_low)
+    print('upper cut-off = ', x_peaks_high)
+    print('x_peaks = ', x_peaks)
 
     # curve fitting
     expected = []
@@ -101,32 +153,37 @@ def calculate_area(filename, use_gamma='no', plot='no'):
 
     sigma=np.sqrt(np.diag(cov))
 
-    x_max_low = bins[-1]
-    x_min_high = bins[0]
+    x_mins = []
+    x_maxs = []
+    centers = []
 
-    areas = []
     if use_gamma == 'no':
         for mu, sigma in zip(params[::3], np.abs(params[1::3])):
-            x_min = mu - var * sigma
-            x_max = mu + var * sigma
-            x_max_low = min(x_max_low, x_min)
-            x_min_high = max(x_min_high, x_max)
-            area = np.array(counts, copy=True)
-            area[x < x_min] = 0
-            area[x > x_max] = 0
-            print('area(%) =', np.round(area.sum()*100/total_area, 2))
-            areas.append(area.sum()*100/total_area)
+            centers.append(mu)
+            x_mins.append(mu - var * sigma)
+            x_maxs.append(mu + var * sigma)
     else:
         for mu, alpha, theta in zip(params[::4], params[1::4], params[2::4]):
-            x_min = gamma.ppf(0.0027, a=alpha, loc=mu, scale=theta)
-            x_max = gamma.ppf(0.9973, a=alpha, loc=mu, scale=theta)
-            x_max_low = min(x_max_low, x_min)
-            x_min_high = max(x_min_high, x_max)
-            area = np.array(counts, copy=True)
-            area[x < x_min] = 0
-            area[x > x_max] = 0
-            print('area(%) =', np.round(area.sum()*100/total_area, 2))
-            areas.append(area.sum()*100/total_area)
+            centers.append(mu)
+            x_mins.append(gamma.ppf(0.0027, a=alpha, loc=mu, scale=theta))
+            x_maxs.append(gamma.ppf(0.9973, a=alpha, loc=mu, scale=theta))
+
+    x_mins = np.asarray(x_mins, dtype=float)
+    x_maxs = np.asarray(x_maxs, dtype=float)
+    centers = np.asarray(centers, dtype=float)
+
+    x_mins, x_maxs = find_overlap_boundaries(model=model, params=params, x_mins=x_mins, x_maxs=x_maxs)
+
+    x_max_low = np.min(x_mins)
+    x_min_high = np.max(x_maxs)
+
+    areas = []
+    for x_min, x_max in zip(x_mins, x_maxs):
+        area = np.array(counts, copy=True)
+        area[x < x_min] = 0
+        area[x > x_max] = 0
+        print('x_min, x_max, area (%) = ', x_min, x_max, area.sum() * 100 / total_area)
+        areas.append(area.sum() * 100 / total_area)
 
     area = np.array(counts, copy=True)
     x_max = x_max_low
@@ -166,10 +223,16 @@ def calculate_areas():
     if plot not in slist:
         sys.exit('plot should be yes/no')
 
+    input_limit = simpledialog.askstring("Input Limit", 
+                                "Input lower/upper cut-off limit(yes/no):", 
+                                initialvalue='no')
+    if input_limit not in slist:
+            sys.exit('input limit should be yes/no')
+
     areas = []
     num_peaks = []
     for filename in filenames:
-        areas_tmp, num_peaks_tmp = calculate_area(filename, use_gamma=use_gamma, plot=plot)
+        areas_tmp, num_peaks_tmp = calculate_area(filename, use_gamma=use_gamma, input_limit=input_limit, plot=plot)
         areas.append(areas_tmp)
         num_peaks.append(num_peaks_tmp)
 
