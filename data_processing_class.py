@@ -103,6 +103,7 @@ def calculate_area(filename, use_gamma='no', plot='no'):
     x_max_low = bins[-1]
     x_min_high = bins[0]
 
+    areas = []
     if use_gamma == 'no':
         for mu, sigma in zip(params[::3], params[1::3]):
             x_min = mu - var * sigma
@@ -113,6 +114,7 @@ def calculate_area(filename, use_gamma='no', plot='no'):
             area[x < x_min] = 0
             area[x > x_max] = 0
             print('area(%) =', np.round(area.sum()*100/total_area, 2))
+            areas.append(area.sum()*100/total_area)
     else:
         for mu, alpha, theta in zip(params[::4], params[1::4], params[2::4]):
             x_min = gamma.ppf(0.0027, a=alpha, loc=mu, scale=theta)
@@ -123,21 +125,26 @@ def calculate_area(filename, use_gamma='no', plot='no'):
             area[x < x_min] = 0
             area[x > x_max] = 0
             print('area(%) =', np.round(area.sum()*100/total_area, 2))
+            areas.append(area.sum()*100/total_area)
 
     area = np.array(counts, copy=True)
     x_max = x_max_low
     area[x > x_max] = 0
     print('crack/pore area(%) =', np.round(area.sum()*100/total_area, 2))
+    areas.append(area.sum()*100/total_area)
 
     area = np.array(counts, copy=True)
     x_min = x_min_high
     area[x < x_min] = 0
     print('oxide area(%) =', np.round(area.sum()*100/total_area, 2))
+    areas.append(area.sum()*100/total_area)
 
     if plot == 'yes':
         plt.stairs(counts, bins)
         plt.plot(x, model(x, *params), color='red', lw=3, label='model')
         plt.show()
+
+    return areas, num_peaks
 
 def calculate_areas():
     """Select multiple TIFF files and calculate their areas."""
@@ -158,8 +165,22 @@ def calculate_areas():
     if plot not in slist:
         sys.exit('plot should be yes/no')
 
-    for filename in filenames:
-        calculate_area(filename, use_gamma=use_gamma, plot=plot)
+    df = pd.DataFrame(columns=['filename', 'peak area-1 (%)','peak area-2 (%)','peak area-3 (%)','crack/pore area (%)','oxide area(%)'])
+    for filename, idx in zip(filenames, range(len(filenames))):
+        areas, num_peaks = calculate_area(filename, use_gamma=use_gamma, plot=plot)
+        df.loc[idx, 'filename'] = filename
+        df.loc[idx, 'peak area-1 (%)'] = areas[0]
+        df.loc[idx, 'peak area-2 (%)'] = areas[1] if num_peaks > 1 else 0
+        df.loc[idx, 'peak area-3 (%)'] = areas[2] if num_peaks > 2 else 0
+        df.loc[idx, 'crack/pore area (%)'] = areas[-2]
+        df.loc[idx, 'oxide area(%)'] = areas[-1]
+
+    filename_output = filenames[0].replace('.tif', '.csv')
+    filename_output = simpledialog.askstring("Enter Output File", 
+                                            "Enter output path/file name (and .ext):", 
+                                            initialvalue=filename_output)
+    df.to_csv(filename_output, index=False)
+        
 
 def convert_dat_to_cvs():
     """
