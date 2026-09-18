@@ -48,7 +48,7 @@ def make_model(use_gamma='no'):
             return multi_gamma(x, list(flat_params))
     return model
 
-def find_overlap_boundaries(model, params, x_mins, x_maxs, num_points=1000):
+def find_overlap_boundaries(model, params, x_mins, x_maxs, x, centers, sigmas, As, use_gamma, num_points=1000):
     """
     Adjust overlapping distribution bounds to the local minimum between
     adjacent fitted Gaussian/Gamma distributions.
@@ -77,11 +77,16 @@ def find_overlap_boundaries(model, params, x_mins, x_maxs, num_points=1000):
                 # the midpoint between the two distributions.
                 midpoint = (left + right) / 2
                 idx = minima[np.argmin(np.abs(x_local[minima] - midpoint))]
+                boundary = float(x_local[idx])
             else:
                 # Fallback for strongly overlapping distributions.
-                idx = np.argmin(y_local)
-
-            boundary = float(x_local[idx])
+                if use_gamma == 'no':
+                    diff = gauss(x,centers[i],sigmas[i],As[i]) - gauss(x,centers[i+1],sigmas[i+1],As[i+1])
+                    idx = np.where(np.sign(diff[:-1]) != np.sign(diff[1:]))[0][0]
+                    boundary = x[idx]
+                else:
+                    idx = np.argmin(y_local)
+                    boundary = float(x_local[idx])
 
             # Make the two distributions meet at the local minimum.
             x_maxs[i] = boundary
@@ -156,12 +161,16 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
     x_mins = []
     x_maxs = []
     centers = []
+    sigmas = []
+    As = []
 
     if use_gamma == 'no':
-        for mu, sigma in zip(params[::3], np.abs(params[1::3])):
+        for mu, sigma, Amp in zip(params[::3], np.abs(params[1::3]), params[2::3]):
             centers.append(mu)
             x_mins.append(mu - var * sigma)
             x_maxs.append(mu + var * sigma)
+            sigmas.append(sigma)
+            As.append(Amp)
     else:
         for mu, alpha, theta in zip(params[::4], params[1::4], params[2::4]):
             centers.append(mu)
@@ -171,8 +180,10 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
     x_mins = np.asarray(x_mins, dtype=float)
     x_maxs = np.asarray(x_maxs, dtype=float)
     centers = np.asarray(centers, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    As = np.asarray(As, dtype=float)
 
-    x_mins, x_maxs = find_overlap_boundaries(model=model, params=params, x_mins=x_mins, x_maxs=x_maxs)
+    x_mins, x_maxs = find_overlap_boundaries(model=model, params=params, x_mins=x_mins, x_maxs=x_maxs, x=x, centers=centers, sigmas=sigmas, As=As, use_gamma=use_gamma)
 
     x_max_low = np.min(x_mins)
     x_min_high = np.max(x_maxs)
