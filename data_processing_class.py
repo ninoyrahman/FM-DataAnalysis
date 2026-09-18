@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from tkinter import filedialog, simpledialog
+import tkinter as tk
 
 import cv2, sys
 from matplotlib import pyplot as plt
@@ -48,7 +49,7 @@ def make_model(use_gamma='no'):
             return multi_gamma(x, list(flat_params))
     return model
 
-def find_overlap_boundaries(model, params, x_mins, x_maxs, num_points=1000):
+def find_overlap_boundaries(model, params, x_mins, x_maxs, x, centers, sigmas, As, use_gamma, num_points=1000):
     """
     Adjust overlapping distribution bounds to the local minimum between
     adjacent fitted Gaussian/Gamma distributions.
@@ -77,11 +78,16 @@ def find_overlap_boundaries(model, params, x_mins, x_maxs, num_points=1000):
                 # the midpoint between the two distributions.
                 midpoint = (left + right) / 2
                 idx = minima[np.argmin(np.abs(x_local[minima] - midpoint))]
+                boundary = float(x_local[idx])
             else:
                 # Fallback for strongly overlapping distributions.
-                idx = np.argmin(y_local)
-
-            boundary = float(x_local[idx])
+                if use_gamma == 'no':
+                    diff = gauss(x,centers[i],sigmas[i],As[i]) - gauss(x,centers[i+1],sigmas[i+1],As[i+1])
+                    idx = np.where(np.sign(diff[:-1]) != np.sign(diff[1:]))[0][0]
+                    boundary = x[idx]
+                else:
+                    idx = np.argmin(y_local)
+                    boundary = float(x_local[idx])
 
             # Make the two distributions meet at the local minimum.
             x_maxs[i] = boundary
@@ -156,12 +162,16 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
     x_mins = []
     x_maxs = []
     centers = []
+    sigmas = []
+    As = []
 
     if use_gamma == 'no':
-        for mu, sigma in zip(params[::3], np.abs(params[1::3])):
+        for mu, sigma, Amp in zip(params[::3], np.abs(params[1::3]), params[2::3]):
             centers.append(mu)
             x_mins.append(mu - var * sigma)
             x_maxs.append(mu + var * sigma)
+            sigmas.append(sigma)
+            As.append(Amp)
     else:
         for mu, alpha, theta in zip(params[::4], params[1::4], params[2::4]):
             centers.append(mu)
@@ -171,8 +181,10 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
     x_mins = np.asarray(x_mins, dtype=float)
     x_maxs = np.asarray(x_maxs, dtype=float)
     centers = np.asarray(centers, dtype=float)
+    sigmas = np.asarray(sigmas, dtype=float)
+    As = np.asarray(As, dtype=float)
 
-    x_mins, x_maxs = find_overlap_boundaries(model=model, params=params, x_mins=x_mins, x_maxs=x_maxs)
+    x_mins, x_maxs = find_overlap_boundaries(model=model, params=params, x_mins=x_mins, x_maxs=x_maxs, x=x, centers=centers, sigmas=sigmas, As=As, use_gamma=use_gamma)
 
     x_max_low = np.min(x_mins)
     x_min_high = np.max(x_maxs)
@@ -204,30 +216,49 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
 
     return areas, num_peaks
 
+def get_options(parent=None):
+    root_option = tk.Toplevel(parent)
+    root_option.title("Options")
+    root_option.geometry("400x200")
+    root_option.resizable(False, False)
+
+    # Variables
+    use_gamma_var = tk.BooleanVar(master=root_option, value=False)
+    plot_var = tk.BooleanVar(master=root_option, value=False)
+    input_limit_var = tk.BooleanVar(master=root_option, value=False)
+
+    # Checkbuttons
+    tk.Checkbutton(root_option, text="Use gamma distribution fitting", variable=use_gamma_var).pack(anchor="w", padx=20, pady=5)
+    tk.Checkbutton(root_option, text="Plot histogram", variable=plot_var).pack(anchor="w", padx=20, pady=5)
+    tk.Checkbutton(root_option, text="Input lower/upper cut-off limit", variable=input_limit_var).pack(anchor="w", padx=20, pady=5)
+
+    # Store returned values
+    result = []
+
+    def submit():
+        result.extend([
+            'yes' if use_gamma_var.get() else 'no',
+            'yes' if plot_var.get() else 'no',
+            'yes' if input_limit_var.get() else 'no'
+        ])
+        root_option.destroy()
+
+    tk.Button(root_option, text="OK", command=submit).pack(pady=10)
+
+    root_option.transient(parent)
+    root_option.grab_set()
+    root_option.protocol("WM_DELETE_WINDOW", root_option.destroy)
+    root_option.wait_window()
+
+    return result[0], result[1], result[2]
+
 def calculate_areas():
     """Select multiple TIFF files and calculate their areas."""
     filenames = filedialog.askopenfilenames(initialdir="/",
                                             title="File Names",
                                             filetype=(("tif files", "*.tif"),("All Files", "*.*")))
 
-    use_gamma = simpledialog.askstring("Use Gamma", 
-                                "Use gamma distribution fitting(yes/no):", 
-                                initialvalue='no')
-    slist = ['yes', 'no']
-    if use_gamma not in slist:
-        sys.exit('use gamma should be yes/no')
-
-    plot = simpledialog.askstring("Plot Data", 
-                                "Plot histogram(yes/no):", 
-                                initialvalue='no')
-    if plot not in slist:
-        sys.exit('plot should be yes/no')
-
-    input_limit = simpledialog.askstring("Input Limit", 
-                                "Input lower/upper cut-off limit(yes/no):", 
-                                initialvalue='no')
-    if input_limit not in slist:
-            sys.exit('input limit should be yes/no')
+    use_gamma, plot, input_limit = get_options()
 
     areas = []
     num_peaks = []

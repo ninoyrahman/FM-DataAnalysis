@@ -209,6 +209,7 @@ class PPMSDataProcessingGUI(tk.Tk):
         self.convert_button.configure(state=state)
         self.format_button.configure(state=state)
         self.cooling_button.configure(state=state)
+        self.calculate_areas_button.configure(state=state)
 
     def write_output(self, text):
         """Append text to the output console."""
