@@ -57,6 +57,9 @@ def find_overlap_boundaries(model, params, x_mins, x_maxs, x, centers, sigmas, A
     order = np.argsort(x_mins)
     x_mins = x_mins[order]
     x_maxs = x_maxs[order]
+    centers = centers[order]
+    sigmas = sigmas[order]
+    As = As[order]
 
     for i in range(len(x_mins) - 1):
         if x_maxs[i] >= x_mins[i + 1]:
