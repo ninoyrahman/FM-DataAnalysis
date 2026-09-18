@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from tkinter import filedialog, simpledialog
+import tkinter as tk
 
 import cv2, sys
 from matplotlib import pyplot as plt
@@ -215,30 +216,49 @@ def calculate_area(filename, use_gamma='no', input_limit='no', plot='no'):
 
     return areas, num_peaks
 
+def get_options(parent=None):
+    root_option = tk.Toplevel(parent)
+    root_option.title("Options")
+    root_option.geometry("400x200")
+    root_option.resizable(False, False)
+
+    # Variables
+    use_gamma_var = tk.BooleanVar(master=root_option, value=False)
+    plot_var = tk.BooleanVar(master=root_option, value=False)
+    input_limit_var = tk.BooleanVar(master=root_option, value=False)
+
+    # Checkbuttons
+    tk.Checkbutton(root_option, text="Use gamma distribution fitting", variable=use_gamma_var).pack(anchor="w", padx=20, pady=5)
+    tk.Checkbutton(root_option, text="Plot histogram", variable=plot_var).pack(anchor="w", padx=20, pady=5)
+    tk.Checkbutton(root_option, text="Input lower/upper cut-off limit", variable=input_limit_var).pack(anchor="w", padx=20, pady=5)
+
+    # Store returned values
+    result = []
+
+    def submit():
+        result.extend([
+            'yes' if use_gamma_var.get() else 'no',
+            'yes' if plot_var.get() else 'no',
+            'yes' if input_limit_var.get() else 'no'
+        ])
+        root_option.destroy()
+
+    tk.Button(root_option, text="OK", command=submit).pack(pady=10)
+
+    root_option.transient(parent)
+    root_option.grab_set()
+    root_option.protocol("WM_DELETE_WINDOW", root_option.destroy)
+    root_option.wait_window()
+
+    return result[0], result[1], result[2]
+
 def calculate_areas():
     """Select multiple TIFF files and calculate their areas."""
     filenames = filedialog.askopenfilenames(initialdir="/",
                                             title="File Names",
                                             filetype=(("tif files", "*.tif"),("All Files", "*.*")))
 
-    use_gamma = simpledialog.askstring("Use Gamma", 
-                                "Use gamma distribution fitting(yes/no):", 
-                                initialvalue='no')
-    slist = ['yes', 'no']
-    if use_gamma not in slist:
-        sys.exit('use gamma should be yes/no')
-
-    plot = simpledialog.askstring("Plot Data", 
-                                "Plot histogram(yes/no):", 
-                                initialvalue='no')
-    if plot not in slist:
-        sys.exit('plot should be yes/no')
-
-    input_limit = simpledialog.askstring("Input Limit", 
-                                "Input lower/upper cut-off limit(yes/no):", 
-                                initialvalue='no')
-    if input_limit not in slist:
-            sys.exit('input limit should be yes/no')
+    use_gamma, plot, input_limit = get_options()
 
     areas = []
     num_peaks = []
