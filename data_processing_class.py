@@ -467,11 +467,17 @@ def ppms_data_formatting():
     field_value = np.unique(np.array(dfall['Magnetic Field (T)'], dtype=np.float64))
     num_field_steps = field_value.size
 
+    filename_fields = filename.replace('.csv', '_fields.csv')
+    df_fields = pd.DataFrame(columns=['Magnetic Field (T)'])
+    df_fields['Magnetic Field (T)'] = np.round(field_value , 2)
+    df_fields.to_csv(filename_fields, index=False)
+
     # -----------------------------------------------------------------------------
     # Display processing information
     # -----------------------------------------------------------------------------
     print('input file name:  ', filename)
     print('output file name: ', filename_output)
+    print('field file name: ', filename_fields)
     print('number of field steps = ', num_field_steps)
     print('field_value = ', field_value)
 
@@ -568,6 +574,10 @@ def cooling_heating_seperation():
     filename = filedialog.askopenfilename(initialdir="/",
                                                 title="Select Input File",
                                                 filetype=(("csv files", "*.csv"),("All Files", "*.*")))
+    filename_fields = filename.replace('_sorted.csv', '_fields.csv')
+    filename_fields = simpledialog.askstring("Enter Field File", 
+                                            "Enter field path/file name (and .ext):", 
+                                            initialvalue=filename_fields) 
     # Construct output filenames for the cooling and heating datasets.
     filename_cooling = filename.replace('.csv', '_cooling.csv')
     filename_heating = filename.replace('.csv', '_heating.csv')
@@ -577,6 +587,7 @@ def cooling_heating_seperation():
                                 initialvalue='no')
 
     print('input file name:  ', filename)
+    print('field file name:  ', filename_fields)
     print('cooling file name: ', filename_cooling)
     print('heating file name: ', filename_heating)
     print('sort: ', sort)
@@ -585,7 +596,9 @@ def cooling_heating_seperation():
     df = pd.read_csv(filename)
 
     # Magnetic-field values to process, in tesla.
-    field_values = [0.02, 2.0, 5.0, 10.0]
+    df_fields = pd.read_csv(filename_fields)
+    field_values = list(df_fields['Magnetic Field (T)'])
+    field_values.sort()
 
     # Process each magnetic field independently.
     for idx in range(len(field_values)):
