@@ -190,15 +190,6 @@ cooling_heating_seperation()
 
 This function separates temperature-dependent measurements into **cooling** and **heating** datasets.
 
-The current implementation processes the following magnetic fields:
-
-```text
-0.02 T
-2.0 T
-5.0 T
-10.0 T
-```
-
 For each field, it:
 
 1. Selects the temperature and mass-normalized moment columns.
