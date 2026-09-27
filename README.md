@@ -2,23 +2,32 @@
 
 A Python/Tkinter-based graphical interface for processing magnetic measurement data collected using a **Physical Property Measurement System (PPMS)**.
 
-The project consists of two Python files:
+The project consists of three Python files:
 
-* **`data_processing_class.py`** – Contains the various PPMS data-processing functions and area calculation.
-* **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running the various functions.
+* **`data_processing_class.py`** – Contains PPMS M–T processing functions and TIFF-image area calculation.
+* **`data_processing_class_MH.py`** – Contains PPMS M–H processing functions.
+* **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running all processing functions.
 
-The GUI imports the functions directly from `data_processing_class.py`, so both files must be kept in the same directory.
+The GUI imports functions from both processing modules, so all three Python files must be kept in the same directory.
 
 ---
 
 ## Features
 
-The application provides various PPMS data-processing operations and area calculation:
+The application provides the following processing operations:
 
-1. **Convert PPMS `.dat` → CSV**
-2. **Format PPMS CSV**
+### M–T processing
+1. **Convert PPMS `.dat` → CSV (M–T)**
+2. **Format PPMS CSV (M–T)**
 3. **Separate Cooling / Heating**
-4. **Calculate Areas**
+
+### M–H processing
+4. **Convert PPMS `.dat` → CSV (M–H)**
+5. **Format PPMS CSV (M–H)**
+6. **Separate Magnetization / Demagnetization**
+
+### Image analysis
+7. **Calculate Areas from TIFF Images**
 
 The processing functions use Tkinter dialogs for selecting files and entering required parameters.
 
@@ -62,12 +71,15 @@ The built application will be created in the dist/ directory.
 
 ## File Structure
 
-Keep the two files together:
+Keep the Python files together:
 
 ```text
 PPMS_Data_Tools/
 ├── data_processing_class.py
-└── ppms_data_processing_gui.py
+├── data_processing_class_MH.py
+├── ppms_data_processing_gui.py
+├── ppms_data_processing.spec
+└── README.md
 ```
 
 ---
@@ -82,7 +94,19 @@ python ppms_data_processing_gui.py
 
 or run the executable `ppms_data_processing` from the dist/ folder.
 
-The **PPMS Data Processing Tools** window will open with various processing buttons.
+The **PPMS Data Processing Tools** window will open with seven processing buttons:
+
+```text
+1. Convert PPMS .dat → CSV (M-T)
+2. Format PPMS CSV (M-T)
+3. Separate Cooling / Heating
+4. Convert PPMS .dat → CSV (M-H)
+5. Format PPMS CSV (M-H)
+6. Separate Magnetization / Demagnetization
+7. Calculate Areas
+```
+
+The processing output printed by the underlying functions is displayed in the GUI output console.
 
 ---
 
@@ -243,10 +267,14 @@ The workflow is:
 2. Remove the bottom 200 rows of each image.
 3. Generate a 1000-bin intensity histogram.
 4. Detect histogram peaks.
-5. Fit either a multiple Gaussian/Gamma model depending on the detected peaks.
-6. Calculate the percentage of pixels within CI=99% of each fitted peak.
-7. Calculate the area below the lower 3σ (or equivalent) boundary of the first peak.
-8. Optionally display the histogram and fitted model.
+5. Apply lower and upper intensity cut-offs.
+6. Fit either a multiple Gaussian or Gamma distribution model.
+7. Determine initial distribution limits.
+8. Adjust overlapping distribution boundaries to local minima of the fitted distributions.
+9. Calculate the percentage of pixels within the fitted distribution ranges.
+10. Calculate the area below the lowest fitted boundary as crack/pore area.
+11. Calculate the area above the highest fitted boundary as oxide area.
+12. Optionally display the histogram and fitted model.
 
 ### Input
 
@@ -256,64 +284,128 @@ Multiple images can be selected through the GUI.
 
 ### Fitting
 
-The histogram is modeled using a Gaussian/Gamma mixture. Depending on the detected
-histogram structure, multiple distributions are fitted.
+The histogram is modeled using either a multiple Gaussian or multiple Gamma distribution,
+depending on the selected option. The number of distributions is determined from the
+detected histogram peaks.
+
+When fitted distributions overlap, their common boundary is adjusted to a local minimum
+of the fitted distribution mixture.
+
+### Intensity cut-offs
+
+The user can optionally enter lower and upper intensity cut-offs. If manual input is not
+selected, the default limits are:
+
+```text
+Lower cut-off = 50
+Upper cut-off = 235
+```
 
 ### Output
 
-The calculated area percentages are printed to the Processing Output area
-of the GUI. Areas are calculated within CI=99% of fitted peaks. 
+The calculated area percentages are printed to the Processing Output area of the GUI.
+
+For each fitted distribution, the output includes its lower boundary, upper boundary,
+and area percentage. Two additional areas are reported:
+
+```text
+crack/pore area (%)
+oxide area (%)
+```
+
+The crack/pore area is the fraction of pixels below the lowest fitted distribution
+boundary. The oxide area is the fraction of pixels above the highest fitted distribution
+boundary.
 
 ### Plotting
 
-Optionally, the histogram and fitted model can be displayed.
+The options dialog includes a `Plot histogram` option. If enabled, the histogram and
+fitted distribution mixture are displayed.
 
 ---
 
-# Recommended Workflow
 
-For typical PPMS temperature-dependent magnetic measurements, the recommended workflow is:
+# M–T and M–H Workflows
+
+## M–T workflow
 
 ```text
 Raw PPMS .dat files
         │
         ▼
-┌─────────────────────────┐
-│ Convert PPMS .dat → CSV │
-└────────────┬────────────┘
+┌────────────────────────────┐
+│ Convert PPMS .dat → CSV    │
+│       convert_dat_to_cvs() │
+└────────────┬───────────────┘
              │
              ▼
-     Combined CSV file
-             │
-             ▼
-┌─────────────────────────┐
-│    Format PPMS CSV      │
-└────────────┬────────────┘
-             │
-             ▼
-       Wide-format CSV
+      Combined M–T CSV
              │
              ▼
 ┌──────────────────────────────┐
-│ Separate Cooling / Heating   │
-└──────────────┬───────────────┘
+│ Format PPMS CSV              │
+│       ppms_data_formatting() │
+└────────────┬─────────────────┘
+             │
+             ▼
+       Wide-format M–T CSV
+             │
+             ▼
+┌──────────────────────────────────┐
+│ Separate Cooling / Heating       │
+│ cooling_heating_seperation()     │
+└──────────────┬───────────────────┘
                │
-        ┌──────┴──────┐
-        ▼             ▼
-   Cooling CSV     Heating CSV
+         ┌─────┴─────┐
+         ▼           ▼
+   Cooling CSV   Heating CSV
 ```
 
-The various operations can be run independently when the input data are already in the appropriate format. The TIFF image area calculation is independent of the PPMS CSV workflow.
+## M–H workflow
+
+```text
+Raw PPMS .dat files
+        │
+        ▼
+┌────────────────────────────┐
+│ Convert PPMS .dat → CSV    │
+│    convert_dat_to_cvs_MH() │
+└────────────┬───────────────┘
+             │
+             ▼
+      Combined M–H CSV
+             │
+             ▼
+┌────────────────────────────────┐
+│ Format PPMS CSV                │
+│    ppms_data_formatting_MH()   │
+└────────────┬───────────────────┘
+             │
+             ▼
+       Wide-format M–H CSV
+             │
+             ▼
+┌──────────────────────────────────────────┐
+│ Separate Magnetization / Demagnetization │
+│ magnetization_demagnetization_seperation│
+└──────────────────┬───────────────────────┘
+                   │
+             ┌─────┴─────┐
+             ▼           ▼
+    Magnetization CSV  Demagnetization CSV
+```
+
+The M–T and M–H workflows can be run independently when the input data are already in
+the required format.
 
 ---
 
 # Version Information
 
-This project consists of:
+The current project contains:
 
-```text
-data_processing_class.py
-ppms_data_processing_gui.py
-```
+The GUI acts as a front end to the processing functions and does not duplicate their
+data-processing algorithms.
 
-The GUI is intended as a front end to the processing functions and does not duplicate their data-processing algorithms.
+The M–T and M–H processing functions are kept in separate modules so that temperature-
+dependent and field-dependent workflows can be maintained independently.
