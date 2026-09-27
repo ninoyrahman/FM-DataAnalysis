@@ -25,6 +25,11 @@ try:
         cooling_heating_seperation,
         calculate_areas,
     )
+    from data_processing_class_MH import (
+            convert_dat_to_cvs_MH,
+            ppms_data_formatting_MH,
+            magnetization_demagnetization_seperation,
+        )
     IMPORT_ERROR = None
 except Exception as exc:
     IMPORT_ERROR = exc
@@ -37,7 +42,7 @@ class PPMSDataProcessingGUI(tk.Tk):
         super().__init__()
 
         self.title("PPMS Data Processing Tools")
-        self.geometry("780x720")
+        self.geometry("780x1020")
         self.minsize(700, 540)
 
         self._configure_style()
@@ -80,7 +85,7 @@ class PPMSDataProcessingGUI(tk.Tk):
             header,
             text=(
                 "Run the three PPMS data-processing functions from "
-                "data_processing_class.py."
+                "data_processing_class.py and data_processing_class_MH.py."
             ),
         ).pack(anchor="w", pady=(6, 0))
 
@@ -94,14 +99,14 @@ class PPMSDataProcessingGUI(tk.Tk):
 
         self.convert_button = self._add_tool(
             tools,
-            "1. Convert PPMS .dat → CSV",
-            "Convert raw PPMS .dat files into a combined CSV.",
+            "1. Convert PPMS .dat → CSV (M-T)",
+            "Convert raw PPMS .dat files into a combined CSV for M-T.",
             self.run_convert,
         )
 
         self.format_button = self._add_tool(
             tools,
-            "2. Format PPMS CSV",
+            "2. Format PPMS CSV (M-T)",
             "Restructure the combined CSV into field-by-field wide format.",
             self.run_format,
         )
@@ -113,11 +118,32 @@ class PPMSDataProcessingGUI(tk.Tk):
             self.run_cooling_heating,
         )
 
+        self.convert_button_MH = self._add_tool(
+            tools,
+            "4. Convert PPMS .dat → CSV (M-H)",
+            "Convert raw PPMS .dat files into a combined CSV for M-H.",
+            self.run_convert_MH,
+        )
+
+        self.format_button_MH = self._add_tool(
+            tools,
+            "5. Format PPMS CSV (M-H)",
+            "Restructure the combined CSV into temp-by-temp wide format.",
+            self.run_format_MH,
+        )
+
+        self.magnetization_button = self._add_tool(
+            tools,
+            "6. Separate Magnetization / Demagnetization",
+            "Separate field-dependent data into Magnetization and Demagnetization datasets.",
+            self.run_mag_dem,
+        )
+        
         self.calculate_areas_button = self._add_tool(
-                    tools,
-                    "4. Calculate Areas",
-                    "Calculate areas from tiff images.",
-                    self.run_calculate_areas,
+            tools,
+            "7. Calculate Areas",
+            "Calculate areas from tiff images.",
+            self.run_calculate_areas,
         )
 
         # Status ------------------------------------------------------------
@@ -209,6 +235,9 @@ class PPMSDataProcessingGUI(tk.Tk):
         self.convert_button.configure(state=state)
         self.format_button.configure(state=state)
         self.cooling_button.configure(state=state)
+        self.convert_button_MH.configure(state=state)
+        self.format_button_MH.configure(state=state)
+        self.magnetization_button.configure(state=state)
         self.calculate_areas_button.configure(state=state)
 
     def write_output(self, text):
@@ -294,6 +323,27 @@ class PPMSDataProcessingGUI(tk.Tk):
         self._run_function(
             cooling_heating_seperation,
             "cooling_heating_seperation()",
+        )
+
+    def run_convert_MH(self):
+        """Run the raw .dat to CSV conversion function (M-H)."""
+        self._run_function(
+            convert_dat_to_cvs_MH,
+            "convert_dat_to_cvs_MH()",
+        )
+
+    def run_format_MH(self):
+        """Run the PPMS CSV formatting function (M-H)."""
+        self._run_function(
+            ppms_data_formatting_MH,
+            "ppms_data_formatting_MH()",
+        )
+
+    def run_mag_dem(self):
+        """Run the magnetization/demagnetization separation function."""
+        self._run_function(
+            magnetization_demagnetization_seperation,
+            "magnetization_demagnetization_seperation()",
         )
 
     def run_calculate_areas(self):
