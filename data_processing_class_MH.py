@@ -344,8 +344,3 @@ def magnetization_demagnetization_seperation():
     # Save the separated magnetization/demagnetization dataset.
     dfnew_mag.to_csv(filename_magnetization, index=False)
     dfnew_dem.to_csv(filename_demagnetization, index=False)
-
-# if __name__ == "__main__":
-#     convert_dat_to_cvs_MH()
-#     ppms_data_formatting_MH()
-#     magnetization_demagnetization_seperation()
