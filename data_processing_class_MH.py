@@ -292,12 +292,16 @@ def magnetization_demagnetization_seperation():
     sort = simpledialog.askstring("Sort Data", 
                                 "Sort according to field(yes/no):", 
                                 initialvalue='no')
+    remove_neg_field = simpledialog.askstring("Remove Negative Fields",
+                                "Remove negative field values(yes/no):",
+                                initialvalue='no')
 
     print('input file name:  ', filename)
     print('temperature file name:  ', filename_temps)
     print('cooling file name: ', filename_magnetization)
     print('heating file name: ', filename_demagnetization)
     print('sort: ', sort)
+    print('Remove negative fields: ', remove_neg_field)
 
     # Load the combined PPMS measurement data.
     df = pd.read_csv(filename)
@@ -318,7 +322,8 @@ def magnetization_demagnetization_seperation():
         # Remove rows with missing measurement values.
         df_new = df_new.dropna()
         # Remove rows with negative field values.
-        df_new = df_new[df_new[str1] > 0]
+        if remove_neg_field == 'yes':
+            df_new = df_new[df_new[str1] > 0]
         # Use the maximum-field point as the magnetization/demagnetization boundary.
         maxloc = df_new[str1].idxmax()
         df_mag = df_new[:maxloc]
