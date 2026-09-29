@@ -542,8 +542,3 @@ def calculate_entropy_Cp():
 
     # Save the entropy dataset.
     dfnew_ent.to_csv(filename_output, index=False)
-
-if __name__ == "__main__":
-    # convert_dat_to_cvs_Cp()
-    # ppms_data_formatting_Cp()
-    calculate_entropy_Cp()
