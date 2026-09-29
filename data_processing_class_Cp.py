@@ -461,22 +461,23 @@ def calculate_entropy_Cp():
             f = interp1d(temp_all, Cp_all, bounds_error=False, fill_value="extrapolate")
             Cp_int = f(temp_int)
 
-            temp_mid = np.zeros(temp_int.size+1, dtype=np.float64)
-            temp_mid[1:-1] = (temp_int[:-1] + temp_int[1:]) / 2.0
-            temp_mid[-1] = temp_int[-1]
-            dT = temp_mid[1:] - temp_mid[:-1]
-            # entropy_with_pulse = (Cp_T_int * dT).cumsum()
             entropy_with_pulse = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0)
+
+            f = interp1d(temp, Cp/temp, bounds_error=False, fill_value="extrapolate")
+            Cp_T_int = f(temp_int)
+            entropy_with_base_int = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0)
 
             str7 = 'Temperature (all) (K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
             str8 = 'Cp (all) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
             str9 = 'Entropy (all) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
+            str10= 'Entropy (base) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
 
             df_new = pd.concat([ df_new, dfp[[str4, str5]] ], axis=1)
             df_tmp = pd.DataFrame()
             df_tmp[str7] = pd.Series(temp_int)
             df_tmp[str8] = pd.Series(Cp_int)
             df_tmp[str9] = pd.Series(entropy_with_pulse)
+            df_tmp[str10]= pd.Series(entropy_with_base_int)
             df_new = pd.concat([ df_new, df_tmp ], axis=1)
 
         # Combined the datasets for entropy.
