@@ -4,8 +4,7 @@ from tkinter import filedialog, simpledialog
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 from scipy.interpolate import interp1d
-from scipy import signal
-from scipy.optimize import minimize
+from scipy.integrate import cumulative_trapezoid
 
 def convert_dat_to_cvs_Cp():
     """
@@ -286,7 +285,7 @@ def ppms_data_formatting_Cp():
 
 def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, shift):
 
-    rcParams['figure.figsize'] = 6, 6
+    rcParams['figure.figsize'] = 4, 4
     plt.plot(temp_base, Cp_base, label='base')
     plt.plot(temp_pulse, Cp_pulse+shift, label='pulse')
     plt.xlabel('T (K)')
@@ -321,14 +320,8 @@ def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, s
     x_mid[-1] = x[-1]
     dx = x_mid[1:] - x_mid[:-1]
     s_int = (y * dx).cumsum()
-
-    # idx_temp_all_max = np.abs(temp_all - temp_max).argmin()
-    # print(temp_all[idx_temp_all_max-1], temp_all[idx_temp_all_max], temp_all[idx_temp_all_max+1])
-    # print(dT[idx_temp_all_max-1], dT[idx_temp_all_max], dT[idx_temp_all_max+1])
-    # print((Cp_all/temp_all)[idx_temp_all_max-1], (Cp_all/temp_all)[idx_temp_all_max], (Cp_all/temp_all)[idx_temp_all_max+1])
-    # print((Cp_all*dT/temp_all)[idx_temp_all_max-1], (Cp_all*dT/temp_all)[idx_temp_all_max], (Cp_all*dT/temp_all)[idx_temp_all_max+1])
     
-    rcParams['figure.figsize'] = 12, 6
+    rcParams['figure.figsize'] = 8, 4
 
     plt.subplot(1, 2, 1)
     plt.plot(temp_base, Cp_base, label='base')
@@ -339,7 +332,6 @@ def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, s
 
     plt.subplot(1, 2, 2)
     plt.plot(temp_base, s_base, label='base')
-    # plt.plot(temp_all, s_all, label='base+pulse+shift')
     plt.plot(x, s_int, label='base+pulse+shift (int)')
     plt.xlabel('T (K)')
     plt.ylabel('s (J/Kg/K)')
@@ -360,7 +352,7 @@ def calculate_entropy_Cp():
     filename = filedialog.askopenfilename(initialdir="/",
                                         title="Select Base File",
                                         filetype=(("csv files", "*.csv"),("All Files", "*.*")))
-    filename_pulse = filedialog.askopenfilename(initialdir="/",
+    filename_pulses = filedialog.askopenfilenames(initialdir="/",
                                         title="Select Pulse File",
                                         filetype=(("csv files", "*.csv"),("All Files", "*.*")))
     
@@ -375,7 +367,6 @@ def calculate_entropy_Cp():
 
     # Read the PPMS data into a pandas DataFrame.
     df = pd.read_csv(filename)
-    dfp = pd.read_csv(filename_pulse)
 
     # Magnetic-field values to process, in tesla.
     df_fields = pd.read_csv(filename_fields)
@@ -427,25 +418,32 @@ def calculate_entropy_Cp():
         temp_mid[1:-1] = (temp[:-1] + temp[1:]) / 2.0
         temp_mid[-1] = temp[-1]
         dT = temp_mid[1:] - temp_mid[:-1]
-        entropy_with_base = (Cp * dT / temp).cumsum()
+        # entropy_with_base = (Cp * dT / temp).cumsum()
+        entropy_with_base = cumulative_trapezoid(y=Cp / temp, x=temp, initial=0)
 
-        df_new[str1] = temp # temp_int
-        df_new[str2] = Cp # Cp_int
-        df_new[str3] = entropy_with_base # (Cp_int * dT / temp_int).cumsum()
-        
-        if str4 in dfp.columns:       
+        df_new[str1] = temp
+        df_new[str2] = Cp
+        df_new[str3] = entropy_with_base
+
+        for filename_pulse in filename_pulses:
+            dfp = pd.read_csv(filename_pulse)
+            if str4 in dfp.columns:
+                break
+
+        if str4 in dfp.columns:
 
             temp_pulse = np.array(dfp[str4])
             Cp_pulse = np.array(dfp[str5])
 
-            loop = 'yes'
+            loop = simpledialog.askstring("Continue Loop", 
+                                "Continue pulse data modification loop (yes/no):", 
+                                initialvalue='no')
             temp_pulse_min = temp_pulse.min()
             temp_pulse_max = temp_pulse.max()
             shift = 0
             while loop == 'yes':
                 shift, loop, temp_pulse_min, temp_pulse_max = func(temp, Cp, temp_pulse, Cp_pulse, entropy_with_base, temp_pulse_min, temp_pulse_max, shift)
                 print('shift, temp_min, temp_max = ', shift, temp_pulse_min, temp_pulse_max)
-            shift = 0
             
             idx_temp_pulse_min = np.abs(temp_pulse - temp_pulse_min).argmin()
             idx_temp_pulse_max = np.abs(temp_pulse - temp_pulse_max).argmin()
@@ -467,7 +465,8 @@ def calculate_entropy_Cp():
             temp_mid[1:-1] = (temp_int[:-1] + temp_int[1:]) / 2.0
             temp_mid[-1] = temp_int[-1]
             dT = temp_mid[1:] - temp_mid[:-1]
-            entropy_with_pulse = (Cp_T_int * dT).cumsum()
+            # entropy_with_pulse = (Cp_T_int * dT).cumsum()
+            entropy_with_pulse = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0)
 
             str7 = 'Temperature (all) (K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
             str8 = 'Cp (all) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
