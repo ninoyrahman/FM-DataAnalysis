@@ -347,6 +347,60 @@ def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, s
     return shift, loop, temp_min, temp_max
 
 def calculate_entropy_Cp():
+    """Calculate entropy from formatted PPMS Cp data.
+
+    Processing workflow
+    -------------------
+    1. Select the base ``*_sorted.csv`` file containing formatted Cp data.
+    2. Select one or more pulse-data CSV files.
+    3. Derive the corresponding ``*_fields.csv`` file from the base filename.
+    4. Read the formatted Cp data and determine the available magnetic fields.
+    5. For each magnetic field:
+       - Read the temperature and Cp columns.
+       - Optionally sort the data by temperature when ``multi_protocol`` is
+         enabled.
+       - For multi-protocol data, retain every ``skip``-th point.
+       - Calculate entropy from the numerical integral of ``Cp / T``.
+    6. Search the pulse files for matching pulse temperature/Cp columns.
+    7. If pulse data are available, optionally adjust their temperature range
+       and Cp offset interactively through ``func()``.
+    8. Combine the base and pulse data over the selected temperature interval.
+    9. Interpolate the combined Cp data onto a regular temperature grid.
+    10. Calculate entropy for both the combined and base-only datasets.
+    11. Store the processed columns for each magnetic field.
+    12. Save the complete result as ``*_entropy.csv``.
+
+    Input files
+    -----------
+    Base file:
+        A formatted Cp CSV, normally ending in ``_sorted.csv``.
+
+    Field file:
+        The file obtained by replacing ``_sorted.csv`` with ``_fields.csv``.
+        It contains the magnetic-field values to process.
+
+    Pulse files:
+        CSV files that may contain columns named
+        ``Temperature (pulse) (K) @ H=... T`` and
+        ``Cp (pulse) (J/Kg/K) @ H=... T``.
+
+    Entropy calculation
+    -------------------
+    Base entropy is calculated with SciPy's ``cumulative_trapezoid`` using
+    ``Cp / T`` as the integrand and temperature as the integration variable.
+
+    When pulse data are available, the selected pulse interval is inserted
+    between the corresponding base-data temperature limits after applying
+    the user-selected Cp shift. The combined data are interpolated before
+    the final entropy calculation.
+
+    Output
+    ------
+    A CSV file ending in ``_entropy.csv`` containing temperature, Cp, and
+    entropy data for each processed magnetic field. When pulse data are
+    available, pulse and interpolated combined datasets are also included.
+
+    """
 
     # Select the input CSV file.
     filename = filedialog.askopenfilename(initialdir="/",
