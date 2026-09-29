@@ -304,8 +304,8 @@ def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, s
     idx_temp_pulse_min = np.abs(temp_pulse - temp_min).argmin()
     idx_temp_pulse_max = np.abs(temp_pulse - temp_max).argmin()
     
-    temp_all = np.concatenate((temp_base[:idx_temp_base_min], temp_pulse[idx_temp_pulse_min:idx_temp_pulse_max], temp_base[idx_temp_base_max:]))
-    Cp_all = np.concatenate((Cp_base[:idx_temp_base_min], Cp_pulse[idx_temp_pulse_min:idx_temp_pulse_max] + shift, Cp_base[idx_temp_base_max:]))
+    temp_all = np.concatenate((temp_base[:idx_temp_base_min], temp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1], temp_base[idx_temp_base_max:]))
+    Cp_all = np.concatenate((Cp_base[:idx_temp_base_min], Cp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1] + shift, Cp_base[idx_temp_base_max:]))
     
     temp_mid = np.zeros(temp_all.size+1, dtype=np.float64)
     temp_mid[1:-1] = (temp_all[:-1] + temp_all[1:]) / 2.0
@@ -313,11 +313,38 @@ def func(temp_base, Cp_base, temp_pulse, Cp_pulse, s_base, temp_min, temp_max, s
     dT = temp_mid[1:] - temp_mid[:-1]
     s_all = (Cp_all * dT / temp_all).cumsum()
 
-    plt.plot(temp_all, s_all, label='base+pulse+shift')
+    f = interp1d(temp_all, Cp_all/temp_all, bounds_error=False, fill_value="extrapolate")
+    x = np.linspace(temp_base.min(), temp_base.max(), 200)
+    y = f(x)
+    x_mid = np.zeros(x.size+1, dtype=np.float64)
+    x_mid[1:-1] = (x[:-1] + x[1:]) / 2.0
+    x_mid[-1] = x[-1]
+    dx = x_mid[1:] - x_mid[:-1]
+    s_int = (y * dx).cumsum()
+
+    # idx_temp_all_max = np.abs(temp_all - temp_max).argmin()
+    # print(temp_all[idx_temp_all_max-1], temp_all[idx_temp_all_max], temp_all[idx_temp_all_max+1])
+    # print(dT[idx_temp_all_max-1], dT[idx_temp_all_max], dT[idx_temp_all_max+1])
+    # print((Cp_all/temp_all)[idx_temp_all_max-1], (Cp_all/temp_all)[idx_temp_all_max], (Cp_all/temp_all)[idx_temp_all_max+1])
+    # print((Cp_all*dT/temp_all)[idx_temp_all_max-1], (Cp_all*dT/temp_all)[idx_temp_all_max], (Cp_all*dT/temp_all)[idx_temp_all_max+1])
+    
+    rcParams['figure.figsize'] = 12, 6
+
+    plt.subplot(1, 2, 1)
+    plt.plot(temp_base, Cp_base, label='base')
+    plt.plot(temp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1], Cp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1] + shift, label='pulse+shift')
+    plt.xlabel('T (K)')
+    plt.ylabel('Cp (J/Kg/K)')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
     plt.plot(temp_base, s_base, label='base')
+    # plt.plot(temp_all, s_all, label='base+pulse+shift')
+    plt.plot(x, s_int, label='base+pulse+shift (int)')
     plt.xlabel('T (K)')
     plt.ylabel('s (J/Kg/K)')
     plt.legend()
+
     plt.tight_layout()
     plt.show()
 
@@ -411,8 +438,6 @@ def calculate_entropy_Cp():
             temp_pulse = np.array(dfp[str4])
             Cp_pulse = np.array(dfp[str5])
 
-            # res = minimize(func, x0=0, args=(temp, Cp, temp_pulse, Cp_pulse, entropy_with_base))
-
             loop = 'yes'
             temp_pulse_min = temp_pulse.min()
             temp_pulse_max = temp_pulse.max()
@@ -429,14 +454,20 @@ def calculate_entropy_Cp():
             idx_temp_base_max = np.abs(temp - temp_pulse_max).argmin()
             print('temp_pulse_start, temp_pulse_end = ', temp_pulse[idx_temp_pulse_min], temp_pulse[idx_temp_pulse_max])
 
-            temp_all = np.concatenate((temp[:idx_temp_base_min], temp_pulse[idx_temp_pulse_min:idx_temp_pulse_max], temp[idx_temp_base_max:]))
-            Cp_all = np.concatenate((Cp[:idx_temp_base_min], Cp_pulse[idx_temp_pulse_min:idx_temp_pulse_max] + shift, Cp[idx_temp_base_max:]))
-        
-            temp_mid = np.zeros(temp_all.size+1, dtype=np.float64)
-            temp_mid[1:-1] = (temp_all[:-1] + temp_all[1:]) / 2.0
-            temp_mid[-1] = temp_all[-1]
+            temp_all = np.concatenate((temp[:idx_temp_base_min], temp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1], temp[idx_temp_base_max:]))
+            Cp_all = np.concatenate((Cp[:idx_temp_base_min], Cp_pulse[idx_temp_pulse_min:idx_temp_pulse_max+1] + shift, Cp[idx_temp_base_max:]))
+
+            temp_int = np.linspace(temp.min(), temp.max(), 200)
+            f = interp1d(temp_all, Cp_all/temp_all, bounds_error=False, fill_value="extrapolate")
+            Cp_T_int = f(temp_int)
+            f = interp1d(temp_all, Cp_all, bounds_error=False, fill_value="extrapolate")
+            Cp_int = f(temp_int)
+
+            temp_mid = np.zeros(temp_int.size+1, dtype=np.float64)
+            temp_mid[1:-1] = (temp_int[:-1] + temp_int[1:]) / 2.0
+            temp_mid[-1] = temp_int[-1]
             dT = temp_mid[1:] - temp_mid[:-1]
-            entropy_with_pulse = (Cp_all * dT / temp_all).cumsum()
+            entropy_with_pulse = (Cp_T_int * dT).cumsum()
 
             str7 = 'Temperature (all) (K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
             str8 = 'Cp (all) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
@@ -444,8 +475,8 @@ def calculate_entropy_Cp():
 
             df_new = pd.concat([ df_new, dfp[[str4, str5]] ], axis=1)
             df_tmp = pd.DataFrame()
-            df_tmp[str7] = pd.Series(temp_all)
-            df_tmp[str8] = pd.Series(Cp_all)
+            df_tmp[str7] = pd.Series(temp_int)
+            df_tmp[str8] = pd.Series(Cp_int)
             df_tmp[str9] = pd.Series(entropy_with_pulse)
             df_new = pd.concat([ df_new, df_tmp ], axis=1)
 
