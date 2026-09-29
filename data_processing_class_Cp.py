@@ -419,7 +419,7 @@ def calculate_entropy_Cp():
         temp_mid[-1] = temp[-1]
         dT = temp_mid[1:] - temp_mid[:-1]
         # entropy_with_base = (Cp * dT / temp).cumsum()
-        entropy_with_base = cumulative_trapezoid(y=Cp / temp, x=temp, initial=0)
+        entropy_with_base = cumulative_trapezoid(y=Cp / temp, x=temp, initial=0) + 0.5 * Cp[0]
 
         df_new[str1] = temp
         df_new[str2] = Cp
@@ -461,11 +461,11 @@ def calculate_entropy_Cp():
             f = interp1d(temp_all, Cp_all, bounds_error=False, fill_value="extrapolate")
             Cp_int = f(temp_int)
 
-            entropy_with_pulse = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0)
+            entropy_with_pulse = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0) + 0.5 * temp_int[0] * Cp_T_int[0]
 
             f = interp1d(temp, Cp/temp, bounds_error=False, fill_value="extrapolate")
             Cp_T_int = f(temp_int)
-            entropy_with_base_int = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0)
+            entropy_with_base_int = cumulative_trapezoid(y=Cp_T_int, x=temp_int, initial=0) + 0.5 * temp_int[0] * Cp_T_int[0]
 
             str7 = 'Temperature (all) (K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
             str8 = 'Cp (all) (J/Kg/K) @ H='+str(np.round(field_values[idx], decimals=2))+' T'
