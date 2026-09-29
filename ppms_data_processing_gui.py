@@ -1,7 +1,20 @@
+"""
+PPMS Data Processing GUI
+========================
+
+Tkinter interface for the three processing functions in
+data_processing_class.py:
+
+    1. convert_dat_to_cvs()
+    2. ppms_data_formatting()
+    3. cooling_heating_seperation()
+    4. calculate_areas()
+
+Keep this GUI and data_processing_class.py in the same folder.
+"""
 
 import io
 import tkinter as tk
-import threading
 from contextlib import redirect_stdout, redirect_stderr
 from tkinter import messagebox, ttk
 
@@ -13,10 +26,10 @@ try:
         calculate_areas,
     )
     from data_processing_class_MH import (
-        convert_dat_to_cvs_MH,
-        ppms_data_formatting_MH,
-        magnetization_demagnetization_seperation,
-    )
+            convert_dat_to_cvs_MH,
+            ppms_data_formatting_MH,
+            magnetization_demagnetization_seperation,
+        )
     from data_processing_class_Cp import (
         convert_dat_to_cvs_Cp,
         ppms_data_formatting_Cp,
@@ -27,375 +40,375 @@ except Exception as exc:
     IMPORT_ERROR = exc
 
 
-class PPMSDataProcessingGUI:
-    """Compact workflow-oriented GUI for PPMS data processing."""
+class PPMSDataProcessingGUI(tk.Tk):
+    """Main application window for the PPMS processing functions."""
 
-    def __init__(self, root):
-        self.root = root
-        self.root.title("PPMS Data Processing Tools")
-        self.root.geometry("820x760")
-        self.root.minsize(720, 620)
+    def __init__(self):
+        super().__init__()
 
-        self.workflows = {
-            "M–T": {
-                "title": "M–T PROCESSING",
-                "steps": [
-                    ("Convert", "Convert PPMS .dat files to CSV.", self.run_mt_convert),
-                    ("Format", "Format the combined M–T CSV by magnetic field.", self.run_mt_format),
-                    ("Separate", "Separate cooling and heating data.", self.run_mt_separate),
-                ],
-            },
-            "M–H": {
-                "title": "M–H PROCESSING",
-                "steps": [
-                    ("Convert", "Convert PPMS .dat files to CSV.", self.run_mh_convert),
-                    ("Format", "Format the combined M–H CSV by temperature.", self.run_mh_format),
-                    ("Separate", "Separate magnetization and demagnetization data.", self.run_mh_separate),
-                ],
-            },
-            "Cp–S": {
-                "title": "Cp–s PROCESSING",
-                "steps": [
-                    ("Convert", "Convert PPMS .dat files to CSV.", self.run_Cps_convert),
-                    ("Format", "Format the combined Cp–s CSV by magnetic field.", self.run_Cps_format),
-                    ("Calculate", "Calculate entropy.", self.run_calculate_entropy),
-                ],
-            },            
-            "TIFF Analysis": {
-                "title": "TIFF ANALYSIS",
-                "steps": [
-                    ("Calculate Areas", "Calculate intensity-distribution areas from TIFF images.", self.run_tiff),
-                ],
-            },
-        }
+        self.title("PPMS Data Processing Tools")
+        self.geometry("920x820")
+        self.minsize(920, 540)
 
-        self.current_workflow = "M–T"
-        self.current_step = 0
-        self.running = False
-
-        self.workflow_buttons = {}
-        self.step_buttons = []
-        self.output_text = None
-        self.log_text = None
-        self.progress = None
-        self.status_var = tk.StringVar(value="Ready")
-        self.step_title_var = tk.StringVar()
-        self.step_description_var = tk.StringVar()
-
-        self._build_style()
+        self._configure_style()
         self._build_gui()
-        self._select_workflow("M–T")
-        self._write_result("Ready. Select a workflow and processing step.")
 
-    def _build_style(self):
-        style = ttk.Style()
+        if IMPORT_ERROR is not None:
+            self._show_import_error()
+
+    def _configure_style(self):
+        """Configure the appearance of the application."""
+        style = ttk.Style(self)
         try:
             style.theme_use("clam")
         except tk.TclError:
             pass
 
-        style.configure("Title.TLabel", font=("TkDefaultFont", 16, "bold"))
-        style.configure("Workflow.TButton", font=("TkDefaultFont", 11, "bold"), padding=(18, 9))
-        style.configure("ActiveWorkflow.TButton", font=("TkDefaultFont", 11, "bold"), padding=(18, 9))
-        style.configure("Step.TButton", font=("TkDefaultFont", 10), padding=(15, 8))
-        style.configure("ActiveStep.TButton", font=("TkDefaultFont", 10, "bold"), padding=(15, 8))
-        style.configure("Run.TButton", font=("TkDefaultFont", 10, "bold"), padding=(18, 8))
-        style.configure("Status.TLabel", font=("TkDefaultFont", 9))
-        style.configure("Card.TFrame", relief="solid", borderwidth=1)
+        style.configure(
+            "Title.TLabel",
+            font=("TkDefaultFont", 20, "bold"),
+        )
+        style.configure(
+            "Tool.TButton",
+            font=("TkDefaultFont", 11, "bold"),
+        )
 
     def _build_gui(self):
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(2, weight=1)
+        """Create all widgets in the main window."""
 
-        header = ttk.Frame(self.root, padding=(18, 14, 18, 10))
-        header.grid(row=0, column=0, sticky="ew")
-        header.columnconfigure(0, weight=1)
+        # Header ------------------------------------------------------------
+        header = ttk.Frame(self, padding=(24, 20, 24, 10))
+        header.pack(fill="x")
 
-        ttk.Label(header, text="PPMS Data Processing Tools", style="Title.TLabel").grid(
-            row=0, column=0, sticky="w"
+        ttk.Label(
+            header,
+            text="PPMS Data Processing Tools",
+            style="Title.TLabel",
+        ).pack(anchor="w")
+
+        ttk.Label(
+            header,
+            text=(
+                "Run the three PPMS data-processing functions from "
+                "data_processing_class.py and data_processing_class_MH.py."
+            ),
+        ).pack(anchor="w", pady=(6, 0))
+
+        # Processing buttons ------------------------------------------------
+        tools = ttk.LabelFrame(
+            self,
+            text="Processing Functions",
+            padding=18,
+        )
+        tools.pack(fill="x", padx=24, pady=12)
+
+        self.convert_button = self._add_tool(
+            tools,
+            "1. Convert PPMS .dat → CSV (M-T)",
+            "Convert raw PPMS .dat files into a combined CSV for M-T.",
+            self.run_convert, row=0, column=0
         )
 
-        workflow_bar = ttk.Frame(header)
-        workflow_bar.grid(row=1, column=0, sticky="ew", pady=(12, 0))
-
-        for column, name in enumerate(self.workflows):
-            workflow_bar.columnconfigure(column, weight=1)
-            button = ttk.Button(
-                workflow_bar,
-                text=name,
-                style="Workflow.TButton",
-                command=lambda workflow=name: self._select_workflow(workflow),
-            )
-            button.grid(row=0, column=column, sticky="ew", padx=(0 if column == 0 else 5, 5))
-            self.workflow_buttons[name] = button
-
-        separator = ttk.Separator(self.root, orient="horizontal")
-        separator.grid(row=1, column=0, sticky="ew")
-
-        main = ttk.Frame(self.root, padding=(18, 16, 18, 12))
-        main.grid(row=2, column=0, sticky="nsew")
-        main.columnconfigure(0, weight=1)
-        main.rowconfigure(1, weight=1)
-
-        workflow_panel = ttk.Frame(main)
-        workflow_panel.grid(row=0, column=0, sticky="ew", pady=(0, 14))
-        workflow_panel.columnconfigure(0, weight=1)
-
-        ttk.Label(workflow_panel, textvariable=self.step_title_var, font=("TkDefaultFont", 12, "bold")).grid(
-            row=0, column=0, sticky="w"
-        )
-        ttk.Label(workflow_panel, textvariable=self.step_description_var, wraplength=760).grid(
-            row=1, column=0, sticky="w", pady=(3, 10)
+        self.format_button = self._add_tool(
+            tools,
+            "2. Format PPMS CSV (M-T)",
+            "Restructure the combined CSV into field-by-field wide format.",
+            self.run_format, row=0, column=1
         )
 
-        self.steps_frame = ttk.Frame(workflow_panel)
-        self.steps_frame.grid(row=2, column=0, sticky="ew")
-
-        controls = ttk.Frame(workflow_panel)
-        controls.grid(row=3, column=0, sticky="ew", pady=(12, 0))
-        controls.columnconfigure(0, weight=1)
-
-        self.run_button = ttk.Button(controls, text="Run", style="Run.TButton", command=self._run_current_step)
-        self.run_button.grid(row=0, column=1, padx=(8, 0))
-
-        self.previous_button = ttk.Button(controls, text="Previous", command=self._previous_step)
-        self.previous_button.grid(row=0, column=2, padx=(8, 0))
-
-        self.next_button = ttk.Button(controls, text="Next", command=self._next_step)
-        self.next_button.grid(row=0, column=3, padx=(8, 0))
-
-        results_frame = ttk.Frame(main, style="Card.TFrame", padding=8)
-        results_frame.grid(row=1, column=0, sticky="nsew")
-        results_frame.columnconfigure(0, weight=1)
-        results_frame.rowconfigure(0, weight=1)
-
-        notebook = ttk.Notebook(results_frame)
-        notebook.grid(row=0, column=0, sticky="nsew")
-
-        result_tab = ttk.Frame(notebook, padding=8)
-        result_tab.columnconfigure(0, weight=1)
-        result_tab.rowconfigure(0, weight=1)
-        notebook.add(result_tab, text="Results")
-
-        self.output_text = tk.Text(result_tab, wrap="word", height=10, state="disabled")
-        output_scroll = ttk.Scrollbar(result_tab, orient="vertical", command=self.output_text.yview)
-        self.output_text.configure(yscrollcommand=output_scroll.set)
-        self.output_text.grid(row=0, column=0, sticky="nsew")
-        output_scroll.grid(row=0, column=1, sticky="ns")
-
-        log_tab = ttk.Frame(notebook, padding=8)
-        log_tab.columnconfigure(0, weight=1)
-        log_tab.rowconfigure(0, weight=1)
-        notebook.add(log_tab, text="Processing Log")
-
-        self.log_text = tk.Text(log_tab, wrap="word", height=10, state="disabled")
-        log_scroll = ttk.Scrollbar(log_tab, orient="vertical", command=self.log_text.yview)
-        self.log_text.configure(yscrollcommand=log_scroll.set)
-        self.log_text.grid(row=0, column=0, sticky="nsew")
-        log_scroll.grid(row=0, column=1, sticky="ns")
-
-        clear_button = ttk.Button(results_frame, text="Clear Output", command=self._clear_output)
-        clear_button.grid(row=1, column=0, sticky="e", pady=(8, 0))
-
-        status_bar = ttk.Frame(self.root, padding=(18, 8, 18, 12))
-        status_bar.grid(row=3, column=0, sticky="ew")
-        status_bar.columnconfigure(0, weight=1)
-
-        ttk.Label(status_bar, textvariable=self.status_var, style="Status.TLabel").grid(
-            row=0, column=0, sticky="w"
+        self.cooling_button = self._add_tool(
+            tools,
+            "3. Separate Cooling / Heating",
+            "Separate temperature-dependent data into cooling and heating datasets.",
+            self.run_cooling_heating, row=0, column=2
         )
 
-        self.progress = ttk.Progressbar(status_bar, mode="indeterminate", length=140)
-        self.progress.grid(row=0, column=1, padx=12)
-
-        ttk.Button(status_bar, text="Exit", command=self.root.destroy).grid(row=0, column=2, sticky="e")
-
-    def _select_workflow(self, workflow):
-        if self.running:
-            return
-
-        self.current_workflow = workflow
-        self.current_step = 0
-
-        for name, button in self.workflow_buttons.items():
-            button.configure(style="ActiveWorkflow.TButton" if name == workflow else "Workflow.TButton")
-
-        self._rebuild_steps()
-        self._update_step_display()
-
-    def _rebuild_steps(self):
-        for widget in self.steps_frame.winfo_children():
-            widget.destroy()
-
-        self.step_buttons = []
-        steps = self.workflows[self.current_workflow]["steps"]
-
-        for index, (name, _, _) in enumerate(steps):
-            button = ttk.Button(
-                self.steps_frame,
-                text=("\u2713 " if index == self.current_step else "\u274C ") + name, # \u25CF (black circle), \u2713 (tick), \u274C (cross), \u26D2 (cross circle)
-                style="ActiveStep.TButton" if index == self.current_step else "Step.TButton",
-                command=lambda step=index: self._select_step(step),
-            )
-            button.grid(row=0, column=index, sticky="ew", padx=(0 if index == 0 else 5, 5))
-            self.steps_frame.columnconfigure(index, weight=1)
-            self.step_buttons.append(button)
-
-    def _select_step(self, step):
-        if self.running:
-            return
-        self.current_step = step
-        self._update_step_display()
-
-    def _update_step_display(self):
-        workflow = self.workflows[self.current_workflow]
-        name, description, _ = workflow["steps"][self.current_step]
-
-        self.step_title_var.set(workflow["title"])
-        self.step_description_var.set(f"{name}: {description}")
-
-        for index, button in enumerate(self.step_buttons):
-            step_name = workflow["steps"][index][0]
-            button.configure(
-                text=("\u2713 " if index == self.current_step else "\u274C ") + step_name,
-                style="ActiveStep.TButton" if index == self.current_step else "Step.TButton",
-            )
-
-        self.previous_button.configure(state="normal" if self.current_step > 0 else "disabled")
-        self.next_button.configure(
-            state="normal" if self.current_step < len(workflow["steps"]) - 1 else "disabled"
+        self.convert_button_MH = self._add_tool(
+            tools,
+            "4. Convert PPMS .dat → CSV (M-H)",
+            "Convert raw PPMS .dat files into a combined CSV for M-H.",
+            self.run_convert_MH, row=1, column=0
         )
 
-    def _previous_step(self):
-        if self.current_step > 0:
-            self.current_step -= 1
-            self._update_step_display()
+        self.format_button_MH = self._add_tool(
+            tools,
+            "5. Format PPMS CSV (M-H)",
+            "Restructure the combined CSV into temp-by-temp wide format.",
+            self.run_format_MH, row=1, column=1
+        )
 
-    def _next_step(self):
-        if self.current_step < len(self.workflows[self.current_workflow]["steps"]) - 1:
-            self.current_step += 1
-            self._update_step_display()
+        self.magnetization_button = self._add_tool(
+            tools,
+            "6. Separate Magnetization / Demagnetization",
+            "Separate field-dependent data into Magnetization and Demagnetization datasets.",
+            self.run_mag_dem, row=1, column=2
+        )
 
-    def _run_current_step(self):
-        if self.running:
-            return
+        self.convert_button_Cp = self._add_tool(
+            tools,
+            "7. Convert PPMS .dat → CSV (Cp-s)",
+            "Convert raw PPMS .dat files into a combined CSV for Cp-s.",
+            self.run_convert_Cp, row=2, column=0
+        )
 
-        function = self.workflows[self.current_workflow]["steps"][self.current_step][2]
-        self._run_function(function)
+        self.format_button_Cp = self._add_tool(
+            tools,
+            "8. Format PPMS CSV (Cp-s)",
+            "Restructure the combined CSV into field-by-field wide format.",
+            self.run_format_Cp, row=2, column=1
+        )
 
-    def _run_function(self, function):
-        self.running = True
-        self.run_button.configure(state="disabled")
-        self.previous_button.configure(state="disabled")
-        self.next_button.configure(state="disabled")
-        self.status_var.set("Processing...")
-        self.progress.start(10)
+        self.calculate_entropy_button = self._add_tool(
+            tools,
+            "9. Calculate Entropy",
+            "Calculate entropy from Cp data.",
+            self.run_calculate_entropy, row=2, column=2
+        )        
 
-        def worker():
-            import contextlib
-            import io
-            import traceback
+        self.calculate_areas_button = self._add_tool(
+            tools,
+            "10. Calculate Areas",
+            "Calculate areas from tiff images.",
+            self.run_calculate_areas, row=3, column=0
+        )
 
-            stdout_buffer = io.StringIO()
-            stderr_buffer = io.StringIO()
-            error = None
+        # Status ------------------------------------------------------------
+        status = ttk.Frame(self, padding=(24, 2))
+        status.pack(fill="x")
 
-            try:
-                with contextlib.redirect_stdout(stdout_buffer), contextlib.redirect_stderr(stderr_buffer):
-                    function()
-            except Exception:
-                error = traceback.format_exc()
+        ttk.Label(status, text="Status:").pack(side="left")
 
-            stdout = stdout_buffer.getvalue()
-            stderr = stderr_buffer.getvalue()
+        self.status_var = tk.StringVar(value="Ready")
+        ttk.Label(status, textvariable=self.status_var).pack(
+            side="left", padx=6
+        )
 
-            self.root.after(0, lambda: self._finish_function(function.__name__, stdout, stderr, error))
+        # Output console ----------------------------------------------------
+        output_frame = ttk.LabelFrame(
+            self,
+            text="Processing Output",
+            padding=10,
+        )
+        output_frame.pack(
+            fill="both",
+            expand=True,
+            padx=24,
+            pady=(8, 20),
+        )
 
-        threading.Thread(target=worker, daemon=True).start()
+        console = ttk.Frame(output_frame)
+        console.pack(fill="both", expand=True)
 
-    def _finish_function(self, function_name, stdout, stderr, error):
-        self.running = False
-        self.progress.stop()
-        self.run_button.configure(state="normal")
-        self._update_step_display()
+        self.output = tk.Text(
+            console,
+            wrap="word",
+            state="disabled",
+            font=("Consolas", 9),
+        )
+        self.output.pack(side="left", fill="both", expand=True)
 
-        if stdout.strip():
-            self._write_result(stdout.strip())
-            self._write_log(stdout.strip())
+        scrollbar = ttk.Scrollbar(
+            console,
+            orient="vertical",
+            command=self.output.yview,
+        )
+        scrollbar.pack(side="right", fill="y")
+        self.output.configure(yscrollcommand=scrollbar.set)
 
-        if stderr.strip():
-            self._write_log(stderr.strip())
+        ttk.Button(
+            output_frame,
+            text="Clear Output",
+            command=self.clear_output,
+        ).pack(anchor="e", pady=(8, 0))
 
-        if error:
-            self.status_var.set("Processing failed")
-            self._write_result(f"Processing failed.\n\n{error}")
-            self._write_log(error)
-            messagebox.showerror("Processing Error", error)
-        else:
-            self.status_var.set("Ready")
-            self._write_result("Processing completed successfully.")
+    @staticmethod
+    def _add_tool(parent, title, description, command, row, column):
+        """Add a processing button and its description."""
+        button = ttk.Button(
+            parent,
+            text=title,
+            style="Tool.TButton",
+            command=command,
+        )
+        # button.pack(fill="x", pady=4)
+        button.grid(row=row, column=column, sticky="ew", padx=(3, 3), pady=(3, 3))
 
-        self._write_log(f"Finished: {function_name}")
+        # ttk.Label(
+        #     parent,
+        #     text=description,
+        #     wraplength=680,
+        # ).pack(anchor="w", padx=12, pady=(0, 10))
 
-    def _write_result(self, message):
-        if self.output_text is None:
-            return
-        self.output_text.configure(state="normal")
-        self.output_text.delete("1.0", "end")
-        self.output_text.insert("end", message + "\n")
-        self.output_text.see("end")
-        self.output_text.configure(state="disabled")
+        return button
 
-    def _write_log(self, message):
-        if self.log_text is None:
-            return
-        self.log_text.configure(state="normal")
-        self.log_text.insert("end", message + "\n")
-        self.log_text.see("end")
-        self.log_text.configure(state="disabled")
+    def _show_import_error(self):
+        """Report an error if data_processing_class.py cannot be imported."""
+        self._set_buttons("disabled")
+        self.status_var.set("Import error")
 
-    def _clear_output(self):
-        self._write_result("")
-        self.log_text.configure(state="normal")
-        self.log_text.delete("1.0", "end")
-        self.log_text.configure(state="disabled")
+        self.write_output(
+            "ERROR: data_processing_class.py could not be imported."
+            f"{IMPORT_ERROR}"
+            "Make sure both Python files are in the same folder."
+        )
+
+        messagebox.showerror(
+            "Import Error",
+            f"Could not import data_processing_class.py.{IMPORT_ERROR}",
+        )
+
+    def _set_buttons(self, state):
+        """Set the state of all processing buttons."""
+        self.convert_button.configure(state=state)
+        self.format_button.configure(state=state)
+        self.cooling_button.configure(state=state)
+        self.convert_button_MH.configure(state=state)
+        self.format_button_MH.configure(state=state)
+        self.magnetization_button.configure(state=state)
+        self.convert_button_Cp.configure(state=state)
+        self.format_button_Cp.configure(state=state)
+        self.calculate_entropy_button.configure(state=state)
+        self.calculate_areas_button.configure(state=state)
+
+    def write_output(self, text):
+        """Append text to the output console."""
+        self.output.configure(state="normal")
+        self.output.insert("end", text)
+        self.output.see("end")
+        self.output.configure(state="disabled")
+
+    def clear_output(self):
+        """Clear the output console."""
+        self.output.configure(state="normal")
+        self.output.delete("1.0", "end")
+        self.output.configure(state="disabled")
         self.status_var.set("Ready")
 
-    def run_mt_convert(self):
-        convert_dat_to_cvs()
+    def _run_function(self, function, function_name):
+        """Run a selected processing function and capture its print output."""
+        if IMPORT_ERROR is not None:
+            return
 
-    def run_mt_format(self):
-        ppms_data_formatting()
+        self._set_buttons("disabled")
+        self.status_var.set(f"Running {function_name}...")
 
-    def run_mt_separate(self):
-        cooling_heating_seperation()
+        self.write_output(
+            f"\n{'=' * 72}\n"
+            f"Starting {function_name}\n"
+            f"{'=' * 72}\n"
+        )
+        self.update_idletasks()
 
-    def run_mh_convert(self):
-        convert_dat_to_cvs_MH()
+        captured = io.StringIO()
 
-    def run_mh_format(self):
-        ppms_data_formatting_MH()
+        try:
+            # The supplied functions already provide their own Tkinter
+            # dialogs for file selection and user input.
+            with redirect_stdout(captured), redirect_stderr(captured):
+                function()
 
-    def run_mh_separate(self):
-        magnetization_demagnetization_seperation()
-        
-    def run_Cps_convert(self):
-        convert_dat_to_cvs_Cp()
+            output = captured.getvalue()
+            if output:
+                self.write_output(output)
 
-    def run_Cps_format(self):
-        ppms_data_formatting_Cp()
+            self.write_output(
+                f"\n{function_name} completed successfully.\n"
+            )
+            self.status_var.set("Ready")
+
+        except Exception as exc:
+            output = captured.getvalue()
+            if output:
+                self.write_output(output)
+
+            self.write_output(
+                f"\nERROR while running {function_name}:\n{exc}\n"
+            )
+            self.status_var.set("Error")
+
+            messagebox.showerror(
+                "Processing Error",
+                f"{function_name} failed.\n\n{exc}",
+            )
+
+        finally:
+            self._set_buttons("normal")
+
+    def run_convert(self):
+        """Run the raw .dat to CSV conversion function."""
+        self._run_function(
+            convert_dat_to_cvs,
+            "convert_dat_to_cvs()",
+        )
+
+    def run_format(self):
+        """Run the PPMS CSV formatting function."""
+        self._run_function(
+            ppms_data_formatting,
+            "ppms_data_formatting()",
+        )
+
+    def run_cooling_heating(self):
+        """Run the cooling/heating separation function."""
+        self._run_function(
+            cooling_heating_seperation,
+            "cooling_heating_seperation()",
+        )
+
+    def run_convert_MH(self):
+        """Run the raw .dat to CSV conversion function (M-H)."""
+        self._run_function(
+            convert_dat_to_cvs_MH,
+            "convert_dat_to_cvs_MH()",
+        )
+
+    def run_format_MH(self):
+        """Run the PPMS CSV formatting function (M-H)."""
+        self._run_function(
+            ppms_data_formatting_MH,
+            "ppms_data_formatting_MH()",
+        )
+
+    def run_mag_dem(self):
+        """Run the magnetization/demagnetization separation function."""
+        self._run_function(
+            magnetization_demagnetization_seperation,
+            "magnetization_demagnetization_seperation()",
+        )
+
+    def run_convert_Cp(self):
+        """Run the raw .dat to CSV conversion function (Cp-s)."""
+        self._run_function(
+            convert_dat_to_cvs_Cp,
+            "convert_dat_to_cvs_Cp()",
+        )
+
+    def run_format_Cp(self):
+        """Run the PPMS CSV formatting function (Cp-s)."""
+        self._run_function(
+            ppms_data_formatting_Cp,
+            "ppms_data_formatting_Cp()",
+        )
 
     def run_calculate_entropy(self):
-        calculate_entropy_Cp()
+        """Run the calculate areas function."""
+        self._run_function(
+            calculate_entropy_Cp,
+            "calculate_entropy_Cp()",
+        )
 
-    def run_tiff(self):
-        calculate_areas()
+    def run_calculate_areas(self):
+            """Run the calculate areas function."""
+            self._run_function(
+                calculate_areas,
+                "calculate_areas()",
+            )
 
 
 def main():
-    root = tk.Tk()
-    app = PPMSDataProcessingGUI(root)
-    root.mainloop()
+    """Start the PPMS Data Processing GUI."""
+    app = PPMSDataProcessingGUI()
+    app.mainloop()
 
 
 if __name__ == "__main__":
