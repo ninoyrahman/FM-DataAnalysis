@@ -6,9 +6,10 @@ The project consists of three Python files:
 
 * **`data_processing_class.py`** – Contains PPMS M–T processing functions and TIFF-image area calculation.
 * **`data_processing_class_MH.py`** – Contains PPMS M–H processing functions.
+* **`data_processing_class_Cp.py`** – Contains PPMS heat-capacity (Cp) and entropy-processing functions.
 * **`ppms_data_processing_gui.py`** – Provides a graphical Tkinter interface for running all processing functions.
 
-The GUI imports functions from both processing modules, so all three Python files must be kept in the same directory.
+The GUI imports functions from all three processing modules, so the Python files should be kept in the same directory.
 
 ---
 
@@ -77,6 +78,7 @@ Keep the Python files together:
 PPMS_Data_Tools/
 ├── data_processing_class.py
 ├── data_processing_class_MH.py
+├── data_processing_class_Cp.py
 ├── ppms_data_processing_gui.py
 ├── ppms_data_processing.spec
 └── README.md
@@ -84,29 +86,47 @@ PPMS_Data_Tools/
 
 ---
 
-## Running the GUI
-
-Open a terminal in the directory containing the two files and run:
+Run the application with:
 
 ```bash
 python ppms_data_processing_gui.py
 ```
 
-or run the executable `ppms_data_processing` from the dist/ folder.
+or run the generated executable from the `dist/` directory.
 
-The **PPMS Data Processing Tools** window will open with seven processing buttons:
+The current GUI is a compact, workflow-oriented Tkinter interface with four workflows:
 
 ```text
-1. Convert PPMS .dat → CSV (M-T)
-2. Format PPMS CSV (M-T)
-3. Separate Cooling / Heating
-4. Convert PPMS .dat → CSV (M-H)
-5. Format PPMS CSV (M-H)
-6. Separate Magnetization / Demagnetization
-7. Calculate Areas
+[ M–T ]        [ M–H ]        [ Cp–S ]        [ TIFF Analysis ]
 ```
 
-The processing output printed by the underlying functions is displayed in the GUI output console.
+### M–T workflow
+
+1. **Convert** – Convert PPMS `.dat` files to CSV.
+2. **Format** – Format the combined M–T CSV by magnetic field.
+3. **Separate** – Separate cooling and heating data.
+
+### M–H workflow
+
+1. **Convert** – Convert PPMS `.dat` files to CSV.
+2. **Format** – Format the combined M–H CSV by temperature.
+3. **Separate** – Separate magnetization and demagnetization data.
+
+### Cp–S workflow
+
+1. **Convert** – Convert PPMS heat-capacity `.dat` files to CSV.
+2. **Format** – Format the combined Cp data by magnetic field.
+3. **Calculate** – Calculate entropy.
+
+### TIFF Analysis workflow
+
+1. **Calculate Areas** – Calculate intensity-distribution areas from TIFF images.
+
+### GUI features
+
+The workflow GUI provides top-level workflow selection, step-by-step processing controls, current-step highlighting, **Run**, **Previous**, and **Next** controls, separate **Results** and **Processing Log** tabs, a progress indicator, **Clear Output**, **Exit**, and background-thread execution so the GUI remains responsive.
+
+The GUI is a front end to the processing modules and does not duplicate their data-processing algorithms.
 
 ---
 
@@ -324,6 +344,39 @@ fitted distribution mixture are displayed.
 
 ---
 
+# Heat-Capacity (Cp) and Entropy Processing
+
+## Module
+
+```python
+data_processing_class_Cp.py
+```
+
+The Cp module provides `convert_dat_to_cvs_Cp()`, `ppms_data_formatting_Cp()`, and `calculate_entropy_Cp()`, plus the helper `func(...)` for interactive pulse-data adjustment.
+
+### Convert PPMS `.dat` → CSV (Cp)
+
+`convert_dat_to_cvs_Cp()` supports continuous and pulse heat-capacity data. It selects PPMS `.dat` files, locates `[Data]`, extracts sample mass from the filename, removes unused/incomplete data, converts field from Oe to T for continuous data, normalizes Cp by sample mass, combines the selected datasets, and saves a CSV.
+
+Continuous output includes `Magnetic Field (T)` and `Cp (J/Kg/K)`. Pulse data use field-specific columns such as `Temperature (pulse) (K) @ H=2.00 T` and `Cp (pulse) (J/Kg/K) @ H=2.00 T`.
+
+### Format Cp CSV
+
+`ppms_data_formatting_Cp()` removes incomplete rows, identifies unique magnetic fields, writes a `_fields.csv` field list, separates the data by field, creates field-specific temperature/Cp columns, combines them side-by-side, and writes the formatted `_sorted.csv` file.
+
+### Calculate entropy
+
+`calculate_entropy_Cp()` calculates entropy from:
+
+```text
+S(T) = ∫ Cp(T) / T dT
+```
+
+It reads the base `_sorted.csv` and `_fields.csv`, processes each field independently, optionally sorts/subsamples multi-protocol data, calculates base entropy with SciPy `cumulative_trapezoid`, searches selected pulse files for matching fields, optionally adjusts pulse temperature limits and Cp shift, interpolates combined Cp/T data, and writes the final `_entropy.csv` dataset.
+
+The pulse adjustment helper `func(...)` allows interactive changes to the pulse temperature range and Cp shift and plots the base/pulse Cp and entropy curves.
+
+---
 
 # M–T and M–H Workflows
 
@@ -397,6 +450,32 @@ Raw PPMS .dat files
 
 The M–T and M–H workflows can be run independently when the input data are already in
 the required format.
+
+## Cp workflow
+
+```text
+Raw PPMS .dat
+      │
+      ▼
+Convert Cp .dat → CSV
+      │
+      ▼
+Combined Cp CSV
+      │
+      ▼
+Format Cp CSV ─────► *_fields.csv
+      │
+      ▼
+   *_sorted.csv
+      │
+      ▼
+Calculate Entropy
+      │
+      ▼
+  *_entropy.csv
+```
+
+The Cp–S workflow is independent of the M–T and M–H workflows.
 
 ---
 
