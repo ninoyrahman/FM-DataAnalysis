@@ -481,10 +481,13 @@ The Cp–S workflow is independent of the M–T and M–H workflows.
 
 # Version Information
 
-The current project contains:
+The current project contains four main Python modules/files:
 
-The GUI acts as a front end to the processing functions and does not duplicate their
-data-processing algorithms.
+- `data_processing_class.py` — M–T processing and TIFF image analysis.
+- `data_processing_class_MH.py` — M–H processing.
+- `data_processing_class_Cp.py` — Cp processing and entropy calculation.
+- `ppms_data_processing_gui.py` — workflow-oriented Tkinter GUI.
 
-The M–T and M–H processing functions are kept in separate modules so that temperature-
-dependent and field-dependent workflows can be maintained independently.
+The GUI acts as a front end to the processing functions and does not duplicate their data-processing algorithms.
+
+The M–T, M–H, and Cp processing functions are kept in separate modules so that the different measurement workflows can be maintained independently.
