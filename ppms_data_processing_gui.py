@@ -3,7 +3,7 @@ PPMS Data Processing GUI
 ========================
 
 Tkinter interface for the three processing functions in
-data_processing_class.py, data_processing_class_MH.py, data_processing_class_Cp.py:
+data_processing_class.py, data_processing_class_MH.py, data_processing_class_Cp.py, area_calculation_class.py:
 
     1. convert_dat_to_cvs()
     2. ppms_data_formatting()
@@ -28,7 +28,6 @@ try:
         convert_dat_to_cvs,
         ppms_data_formatting,
         cooling_heating_seperation,
-        calculate_areas,
     )
     from data_processing_class_MH import (
             convert_dat_to_cvs_MH,
@@ -39,6 +38,9 @@ try:
         convert_dat_to_cvs_Cp,
         ppms_data_formatting_Cp,
         calculate_entropy_Cp,
+        )
+    from area_calculation_class import (
+            calculate_areas,
         )
     IMPORT_ERROR = None
 except Exception as exc:
@@ -163,7 +165,6 @@ class PPMSDataProcessingGUI(tk.Tk):
 
     def _show_import_error(self):
         """Report an error if data_processing_class.py cannot be imported."""
-        self._set_buttons("disabled")
         self.status_var.set("Import error")
 
         self.write_output(
