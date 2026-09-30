@@ -83,21 +83,11 @@ class PPMSDataProcessingGUI(tk.Tk):
     def _build_gui(self):
         """Create all widgets in the main window."""
 
-        # Header ------------------------------------------------------------
-        header = ttk.Frame(self, padding=(24, 20, 24, 10))
-        header.pack(fill="x")
-
-        ttk.Label(
-            header,
-            text="PPMS & SEM Data Processing Tools",
-            style="Title.TLabel",
-        ).pack(anchor="w")
-
         # Processing buttons ------------------------------------------------
         tools = ttk.LabelFrame(
             self,
-            text="Processing Functions",
-            padding=18,
+            text="PPMS & SEM Data Processing Tools",
+            padding=18
         )
         tools.pack(fill="x", padx=24, pady=12)
 
