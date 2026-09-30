@@ -27,7 +27,7 @@ The application provides the following processing operations:
 5. **Format PPMS CSV (M–H)**
 6. **Separate Magnetization / Demagnetization**
 
-### Cp–S workflow
+### Cp–S processing
 
 7. **Convert PPMS `.dat` → CSV (Cp–s)**
 8. **Format PPMS CSV (Cp–s)**
