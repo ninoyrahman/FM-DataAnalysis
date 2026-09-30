@@ -3,14 +3,19 @@ PPMS Data Processing GUI
 ========================
 
 Tkinter interface for the three processing functions in
-data_processing_class.py:
+data_processing_class.py, data_processing_class_MH.py, data_processing_class_Cp.py:
 
     1. convert_dat_to_cvs()
     2. ppms_data_formatting()
     3. cooling_heating_seperation()
-    4. calculate_areas()
+    4. convert_dat_to_cvs_MH()
+    5. ppms_data_formatting_MH()
+    6. magnetization_demagnetization_seperation()
+    7. convert_dat_to_cvs_Cp()
+    8. ppms_data_formatting_Cp()
+    9. calculate_entropy_Cp()
+    10. calculate_areas()
 
-Keep this GUI and data_processing_class.py in the same folder.
 """
 
 import io
@@ -82,17 +87,9 @@ class PPMSDataProcessingGUI(tk.Tk):
 
         ttk.Label(
             header,
-            text="PPMS Data Processing Tools",
+            text="PPMS & SEM Data Processing Tools",
             style="Title.TLabel",
         ).pack(anchor="w")
-
-        ttk.Label(
-            header,
-            text=(
-                "Run the three PPMS data-processing functions from "
-                "data_processing_class.py and data_processing_class_MH.py."
-            ),
-        ).pack(anchor="w", pady=(6, 0))
 
         # Processing buttons ------------------------------------------------
         tools = ttk.LabelFrame(
@@ -102,75 +99,18 @@ class PPMSDataProcessingGUI(tk.Tk):
         )
         tools.pack(fill="x", padx=24, pady=12)
 
-        self.convert_button = self._add_tool(
-            tools,
-            "1. Convert PPMS .dat → CSV (M-T)",
-            "Convert raw PPMS .dat files into a combined CSV for M-T.",
-            self.run_convert, row=0, column=0
-        )
+        self.func_names = ['Convert .dat → CSV (M-T)', 'Format CSV (M-T)', 'Separate Cooling/Heating',
+                      'Convert .dat → CSV (M-H)', 'Format CSV (M-H)', 'Separate Magnetization/Demagnetization',
+                      'Convert .dat → CSV (Cp-s)', 'Format CSV (Cp-s)', 'Calculate Entropy',
+                      'Calculate Areas']
 
-        self.format_button = self._add_tool(
-            tools,
-            "2. Format PPMS CSV (M-T)",
-            "Restructure the combined CSV into field-by-field wide format.",
-            self.run_format, row=0, column=1
-        )
+        self.current_var = tk.StringVar()
+        combobox = ttk.Combobox(tools, values=self.func_names, textvariable=self.current_var, width=40)
+        combobox.set('Convert .dat → CSV (M-T)')
+        combobox.grid(row=0, column=1, padx=(5, 5), pady=(5, 5))
 
-        self.cooling_button = self._add_tool(
-            tools,
-            "3. Separate Cooling / Heating",
-            "Separate temperature-dependent data into cooling and heating datasets.",
-            self.run_cooling_heating, row=0, column=2
-        )
-
-        self.convert_button_MH = self._add_tool(
-            tools,
-            "4. Convert PPMS .dat → CSV (M-H)",
-            "Convert raw PPMS .dat files into a combined CSV for M-H.",
-            self.run_convert_MH, row=1, column=0
-        )
-
-        self.format_button_MH = self._add_tool(
-            tools,
-            "5. Format PPMS CSV (M-H)",
-            "Restructure the combined CSV into temp-by-temp wide format.",
-            self.run_format_MH, row=1, column=1
-        )
-
-        self.magnetization_button = self._add_tool(
-            tools,
-            "6. Separate Magnetization / Demagnetization",
-            "Separate field-dependent data into Magnetization and Demagnetization datasets.",
-            self.run_mag_dem, row=1, column=2
-        )
-
-        self.convert_button_Cp = self._add_tool(
-            tools,
-            "7. Convert PPMS .dat → CSV (Cp-s)",
-            "Convert raw PPMS .dat files into a combined CSV for Cp-s.",
-            self.run_convert_Cp, row=2, column=0
-        )
-
-        self.format_button_Cp = self._add_tool(
-            tools,
-            "8. Format PPMS CSV (Cp-s)",
-            "Restructure the combined CSV into field-by-field wide format.",
-            self.run_format_Cp, row=2, column=1
-        )
-
-        self.calculate_entropy_button = self._add_tool(
-            tools,
-            "9. Calculate Entropy",
-            "Calculate entropy from Cp data.",
-            self.run_calculate_entropy, row=2, column=2
-        )        
-
-        self.calculate_areas_button = self._add_tool(
-            tools,
-            "10. Calculate Areas",
-            "Calculate areas from tiff images.",
-            self.run_calculate_areas, row=3, column=0
-        )
+        button = ttk.Button(tools, text="Run", command=lambda: self._run(), width=20)
+        button.grid(row=0, column=3, padx=(5, 5), pady=(5, 5))
 
         # Status ------------------------------------------------------------
         status = ttk.Frame(self, padding=(24, 2))
@@ -221,26 +161,6 @@ class PPMSDataProcessingGUI(tk.Tk):
             command=self.clear_output,
         ).pack(anchor="e", pady=(8, 0))
 
-    @staticmethod
-    def _add_tool(parent, title, description, command, row, column):
-        """Add a processing button and its description."""
-        button = ttk.Button(
-            parent,
-            text=title,
-            style="Tool.TButton",
-            command=command,
-        )
-        # button.pack(fill="x", pady=4)
-        button.grid(row=row, column=column, sticky="ew", padx=(3, 3), pady=(3, 3))
-
-        # ttk.Label(
-        #     parent,
-        #     text=description,
-        #     wraplength=680,
-        # ).pack(anchor="w", padx=12, pady=(0, 10))
-
-        return button
-
     def _show_import_error(self):
         """Report an error if data_processing_class.py cannot be imported."""
         self._set_buttons("disabled")
@@ -256,19 +176,6 @@ class PPMSDataProcessingGUI(tk.Tk):
             "Import Error",
             f"Could not import data_processing_class.py.{IMPORT_ERROR}",
         )
-
-    def _set_buttons(self, state):
-        """Set the state of all processing buttons."""
-        self.convert_button.configure(state=state)
-        self.format_button.configure(state=state)
-        self.cooling_button.configure(state=state)
-        self.convert_button_MH.configure(state=state)
-        self.format_button_MH.configure(state=state)
-        self.magnetization_button.configure(state=state)
-        self.convert_button_Cp.configure(state=state)
-        self.format_button_Cp.configure(state=state)
-        self.calculate_entropy_button.configure(state=state)
-        self.calculate_areas_button.configure(state=state)
 
     def write_output(self, text):
         """Append text to the output console."""
@@ -289,7 +196,6 @@ class PPMSDataProcessingGUI(tk.Tk):
         if IMPORT_ERROR is not None:
             return
 
-        self._set_buttons("disabled")
         self.status_var.set(f"Running {function_name}...")
 
         self.write_output(
@@ -331,8 +237,35 @@ class PPMSDataProcessingGUI(tk.Tk):
                 f"{function_name} failed.\n\n{exc}",
             )
 
-        finally:
-            self._set_buttons("normal")
+    def _run(self):
+        """Run function based on selection from dropdown menu."""
+        try:
+            current_var = self.current_var.get()
+            if current_var == self.func_names[0]:
+                self.run_convert()
+            elif current_var == self.func_names[1]:
+                self.run_format()
+            elif current_var == self.func_names[2]:
+                self.run_cooling_heating()
+            elif current_var == self.func_names[3]:
+                self.run_convert_MH()
+            elif current_var == self.func_names[4]:
+                self.run_format_MH()
+            elif current_var == self.func_names[5]:
+                self.run_mag_dem()
+            elif current_var == self.func_names[6]:
+                self.run_convert_Cp()
+            elif current_var == self.func_names[7]:
+                self.run_format_Cp()
+            elif current_var == self.func_names[8]:
+                self.run_calculate_entropy()
+            elif current_var == self.func_names[9]:
+                self.run_calculate_areas()
+        
+        except:
+            tk.messagebox.showerror("Information", "File not selected")
+            return None
+        return None        
 
     def run_convert(self):
         """Run the raw .dat to CSV conversion function."""
