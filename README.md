@@ -27,8 +27,14 @@ The application provides the following processing operations:
 5. **Format PPMS CSV (M–H)**
 6. **Separate Magnetization / Demagnetization**
 
+### Cp–S workflow
+
+7. **Convert PPMS `.dat` → CSV (Cp–s)**
+8. **Format PPMS CSV (Cp–s)**
+9. **Calculate entropy from Cp**
+
 ### Image analysis
-7. **Calculate Areas from TIFF Images**
+10. **Calculate Areas from TIFF Images**
 
 The processing functions use Tkinter dialogs for selecting files and entering required parameters.
 
