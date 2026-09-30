@@ -19,18 +19,18 @@ The GUI imports functions from all processing modules, so the Python files shoul
 The application provides the following processing operations:
 
 ### M–T processing
-1. **Convert PPMS `.dat` → CSV (M–T)**
+1. **Convert PPMS `.dat` to CSV (M–T)**
 2. **Format PPMS CSV (M–T)**
 3. **Separate Cooling / Heating**
 
 ### M–H processing
-4. **Convert PPMS `.dat` → CSV (M–H)**
+4. **Convert PPMS `.dat` to CSV (M–H)**
 5. **Format PPMS CSV (M–H)**
 6. **Separate Magnetization / Demagnetization**
 
 ### Cp–s processing
 
-7. **Convert PPMS `.dat` → CSV (Cp–s)**
+7. **Convert PPMS `.dat` to CSV (Cp–s)**
 8. **Format PPMS CSV (Cp–s)**
 9. **Calculate entropy**
 
