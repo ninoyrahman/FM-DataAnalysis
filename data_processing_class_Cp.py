@@ -407,7 +407,7 @@ def calculate_entropy_Cp():
                                         title="Select Base File",
                                         filetype=(("csv files", "*.csv"),("All Files", "*.*")))
     filename_pulses = filedialog.askopenfilenames(initialdir="/",
-                                        title="Select Pulse File",
+                                        title="Select Pulse Files",
                                         filetype=(("csv files", "*.csv"),("All Files", "*.*")))
     
     filename_fields = filename.replace('_sorted.csv', '_fields.csv')
@@ -489,9 +489,10 @@ def calculate_entropy_Cp():
             temp_pulse = np.array(dfp[str4])
             Cp_pulse = np.array(dfp[str5])
 
-            loop = simpledialog.askstring("Continue Loop", 
-                                "Continue pulse data modification loop (yes/no):", 
-                                initialvalue='no')
+            # loop = simpledialog.askstring("Continue Loop", 
+            #                     "Continue pulse data modification loop (yes/no):", 
+            #                     initialvalue='no')
+            loop = 'no'
             temp_pulse_min = temp_pulse.min()
             temp_pulse_max = temp_pulse.max()
             shift = 0
