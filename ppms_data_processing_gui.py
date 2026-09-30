@@ -91,14 +91,14 @@ class PPMSDataProcessingGUI(tk.Tk):
         )
         tools.pack(fill="x", padx=24, pady=12)
 
-        self.func_names = ['Convert .dat → CSV (M-T)', 'Format CSV (M-T)', 'Separate Cooling/Heating',
-                      'Convert .dat → CSV (M-H)', 'Format CSV (M-H)', 'Separate Magnetization/Demagnetization',
-                      'Convert .dat → CSV (Cp-s)', 'Format CSV (Cp-s)', 'Calculate Entropy',
+        self.func_names = ['Convert .dat to CSV (M-T)', 'Format CSV (M-T)', 'Separate Cooling/Heating',
+                      'Convert .dat to CSV (M-H)', 'Format CSV (M-H)', 'Separate Magnetization/Demagnetization',
+                      'Convert .dat to CSV (Cp-s)', 'Format CSV (Cp-s)', 'Calculate Entropy',
                       'Calculate Areas']
 
         self.current_var = tk.StringVar()
         combobox = ttk.Combobox(tools, values=self.func_names, textvariable=self.current_var, width=40)
-        combobox.set('Convert .dat → CSV (M-T)')
+        combobox.set('Convert .dat to CSV (M-T)')
         combobox.grid(row=0, column=1, padx=(5, 5), pady=(5, 5))
 
         button = ttk.Button(tools, text="Run", command=lambda: self._run(), width=20)
